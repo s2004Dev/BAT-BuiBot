@@ -72,4 +72,9 @@ public final class Util {
   public static void send(final @NotNull String message, final @NotNull MessageReceivedEvent e) {
     e.getChannel().sendMessage(message).queue();
   }
+
+  public static int map(final int x, final int inMin, final int inMax, final int outMin,
+                          final int outMax) {
+    return (x-inMin)*(outMax-outMin)/(inMax-inMin)+outMin;
+  }
 }

@@ -57,10 +57,6 @@ public final class XPManager {
     return level;
   }
 
-  public int getNextLevel(final long id) {
-    return getXpFromLevel(getLevel(id)+1);
-  }
-
   public int getXpFromLevel(final int level) {
     var requiredExperience = 0;
 

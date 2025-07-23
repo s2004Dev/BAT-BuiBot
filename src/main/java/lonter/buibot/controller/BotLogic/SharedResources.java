@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SharedResources {
+public final class SharedResources {
   public ShardManager shardManager = null;
   public volatile Guild mainGuild = null;
 
