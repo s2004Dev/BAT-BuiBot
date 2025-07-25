@@ -75,7 +75,7 @@ public final class AfterInvoke {
 
     val msg = new StringBuilder();
 
-    for(val em: findEmojis(input)) {
+    for(var em: findEmojis(input)) {
       em = em.toLowerCase();
 
       if(EMOJIS.containsKey(em))

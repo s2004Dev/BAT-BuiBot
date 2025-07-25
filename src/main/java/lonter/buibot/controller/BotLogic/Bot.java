@@ -5,6 +5,7 @@ import lombok.val;
 import lonter.bat.CommandHandler;
 
 import net.dv8tion.jda.api.OnlineStatus;
+import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
@@ -46,7 +47,8 @@ public final class Bot {
 
     val builder = DefaultShardManagerBuilder.createDefault(token);
 
-    builder.setStatus(OnlineStatus.ONLINE);
+    builder.setStatus(OnlineStatus.IDLE);
+    builder.setActivity(Activity.watching("Buizels"));
 
     try {
       builder.enableIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS);
