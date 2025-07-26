@@ -224,8 +224,8 @@ public class General {
     val embed = new EmbedBuilder();
 
     if(id == e.getAuthor().getIdLong())
-      embed.setTitle("Here are your stats:").setDescription("You said \"Bui\" " + user.getBui() + " time " +
-        plural(user.getBui()) + ".\nYou also said \"Buizel\" " + user.getBuizel() + " time " +
+      embed.setTitle("Here are your stats:").setDescription("You said \"Bui\" " + user.getBui() + " time" +
+        plural(user.getBui()) + ".\nYou also said \"Buizel\" " + user.getBuizel() + " time" +
         plural(user.getBuizel()) + ".");
 
     else

@@ -1,4 +1,4 @@
-package lonter.buibot.controller.BotLogic;
+package lonter.buibot.controller.bot;
 
 import static lonter.buibot.controller.commands.Util.send;
 

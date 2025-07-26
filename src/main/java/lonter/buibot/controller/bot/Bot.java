@@ -1,4 +1,4 @@
-package lonter.buibot.controller.BotLogic;
+package lonter.buibot.controller.bot;
 
 import lombok.AllArgsConstructor;
 import lombok.val;
