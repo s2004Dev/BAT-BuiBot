@@ -11,7 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @ComponentScan(basePackages = { "lonter.buibot", "lonter.bat" })
 public class BuiBot {
-  void main(final String @NotNull[] args) {
+  public static void main(final String @NotNull[] args) {
     val app = new SpringApplication(BuiBot.class);
 
     app.setWebApplicationType(WebApplicationType.NONE);

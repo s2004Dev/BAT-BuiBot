@@ -54,8 +54,8 @@ public class General {
   @Command @Help(description = "Bui will send the list of every bui things sent.")
   @Subcommand(name = "bui", description = "") @Subcommand(name = "buizel", description = "")
   @Subcommand(name = "bevels", description = "")
-  private @NotNull Object leaderboard(final @Args String @NotNull[] args,
-                                      final @Event @NotNull MessageReceivedEvent e) {
+  public @NotNull Object leaderboard(final @Args String @NotNull[] args,
+                                     final @Event @NotNull MessageReceivedEvent e) {
     if(args.length < 1)
       return "Bui... you have to specify what do you want me to show the list of!";
 
@@ -124,8 +124,8 @@ public class General {
   }
 
   @Command @Help(description = "Bui will send someone's profile picture.")
-  private @NotNull Object profilePicture(final @Args String @NotNull[] args,
-                                         final @Event @NotNull MessageReceivedEvent e) {
+  public @NotNull Object profilePicture(final @Args String @NotNull[] args,
+                                        final @Event @NotNull MessageReceivedEvent e) {
     if(!e.isFromGuild())
       return "Bui! You must be in a guild to use this command!";
 
@@ -175,7 +175,7 @@ public class General {
   }
 
   @Command @Help(description = "Bui will send your ranking in the Server (by messages).")
-  private @NotNull Object rank(final @Args String @NotNull[] args, final @Event @NotNull MessageReceivedEvent e) {
+  public @NotNull Object rank(final @Args String @NotNull[] args, final @Event @NotNull MessageReceivedEvent e) {
     val id = getUserId(args, e);
 
     if(id < 1L)
@@ -204,16 +204,20 @@ public class General {
       empty = 0;
     }
 
+    val user = e.getJDA().getUserById(id);
+
+    if(user == null)
+      return "Bui! I don't know this user...";
+
     return new EmbedBuilder().setTitle(e.getAuthor().getIdLong() == id ? "Bui! Here your rank card!" :
-        "Bui! Here is " + Objects.requireNonNull(e.getJDA().getUserById(id)).getName() + "'s rank card!")
-      .setThumbnail(Objects.requireNonNull(e.getJDA().getUserById(id)).getAvatarUrl())
+      "Bui! Here is " + user.getName() + "'s rank card!").setThumbnail(user.getAvatarUrl())
       .setDescription("**Lvl:** " + lvl + " | **" + (xp - xpThisLvl) + "** / " + (xpNext - xpThisLvl) +
-        " **XPs** - (" + (xpNext - xp) + " XPs left) \n\n" + ":green_square:".repeat(filled) +
-        ":white_large_square:".repeat(empty) + " - (" + progress + "%)").setFooter("Please do not spam!");
+      " **XPs** - (" + (xpNext - xp) + " XPs left) \n\n" + ":green_square:".repeat(filled) +
+      ":white_large_square:".repeat(empty) + " - (" + progress + "%)").setFooter("Please do not spam!");
   }
 
   @Command @Help(description = "Bui will send the amount of times someone said bui things.")
-  private @NotNull Object stats(final @NotNull MessageReceivedEvent e) {
+  public @NotNull Object stats(final @NotNull MessageReceivedEvent e) {
     if(!e.isFromGuild())
       return "You can't use this command in DM.";
 

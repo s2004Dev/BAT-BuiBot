@@ -1,6 +1,7 @@
 package lonter.bat.annotations.parameters;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
@@ -12,6 +13,14 @@ import java.lang.annotation.Annotation;
  * with {@link ImplParam}.
  */
 public abstract class CommandArg {
+  /**
+   * Implement this method to declare which parameter annotation this class handles.
+   * This is crucial for the CommandHandler to map annotations to the correct logic.
+   *
+   * @return The .class of the annotation you are handling (e.g., return Args.class;).
+   */
+  public abstract Class<? extends Annotation> getAnnotationType();
+
   /**
    * This function will be called every time you need to inject your parameter. The return value is what the command
    * will get injected.

@@ -18,6 +18,7 @@
 
   <properties>
     <java.version> 23 </java.version>
+    <start-class> lonter.buibot.BuiBot </start-class>
   </properties>
 
   <dependencies>
@@ -46,12 +47,6 @@
     </dependency>
 
     <dependency>
-      <groupId> org.reflections </groupId>
-      <artifactId> reflections </artifactId>
-      <version> 0.10.2 </version>
-    </dependency>
-
-    <dependency>
       <groupId> org.postgresql </groupId>
       <artifactId> postgresql </artifactId>
       <scope> runtime </scope>
@@ -77,6 +72,8 @@
   </dependencies>
 
   <build>
+    <finalName> BuiBot </finalName>
+
     <plugins>
       <plugin>
         <groupId> org.apache.maven.plugins </groupId>

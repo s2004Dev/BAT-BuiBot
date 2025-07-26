@@ -1,19 +1,24 @@
 package lonter.bat;
 
 import jakarta.annotation.PostConstruct;
+
+import lombok.val;
+
 import lonter.bat.annotations.*;
 import lonter.bat.annotations.help.*;
 import lonter.bat.annotations.parameters.*;
 import lonter.bat.annotations.rets.*;
+
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+
 import org.jetbrains.annotations.NotNull;
-import org.reflections.Reflections;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import java.awt.*;
+import java.awt.Color;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -38,14 +43,23 @@ public final class CommandHandler {
 
   private final ApplicationContext applicationContext;
 
-  private Set<Class<?>> implParam;
-  private Set<Class<?>> atParam;
-  private Set<Class<?>> commandClass;
-  private Set<Class<?>> implRet;
-  private Set<Class<?>> help;
+  private final List<HelpInt> help;
+  private final List<CommandArg> parameterHandlers;
+  private final List<ReturnType> returnHandlers;
 
-  private CommandHandler(final @NotNull ApplicationContext applicationContext) {
+  private final Map<Class<? extends Annotation>, CommandArg> parameterInjections = new HashMap<>();
+  private final Map<Class<? extends Annotation>, ReturnType> returnInjections = new HashMap<>();
+
+  private Collection<Object> commandBeans;
+
+  public CommandHandler(final @NotNull ApplicationContext applicationContext,
+                        final @NotNull Optional<List<HelpInt>> help,
+                        final @NotNull Optional<List<CommandArg>> parameterHandlers,
+                        final @NotNull Optional<List<ReturnType>> returnHandlers) {
     this.applicationContext = applicationContext;
+    this.help = help.orElse(Collections.emptyList());
+    this.parameterHandlers = parameterHandlers.orElse(Collections.emptyList());
+    this.returnHandlers = returnHandlers.orElse(Collections.emptyList());
   }
 
   @PostConstruct
@@ -60,16 +74,16 @@ public final class CommandHandler {
       System.exit(-1);
     }
 
-    final var scope = new Reflections(groupId);
+    this.commandBeans = applicationContext.getBeansWithAnnotation(CommandClass.class).values();
 
-    implParam = scope.getTypesAnnotatedWith(ImplParam.class);
-    atParam = scope.getTypesAnnotatedWith(AtParam.class);
-    commandClass = scope.getTypesAnnotatedWith(CommandClass.class);
-    implRet = scope.getTypesAnnotatedWith(ImplRet.class);
-    help = scope.getTypesAnnotatedWith(HelpImpl.class);
+    for(val handler: this.parameterHandlers)
+      parameterInjections.put(handler.getAnnotationType(), handler);
+
+    for(val handler: this.returnHandlers)
+      returnInjections.put(handler.getAnnotationType(), handler);
 
     if(help.size() > 1)
-      System.err.println("Multiple help implementation are not allowed, random one will be used.");
+      System.err.println("Multiple help implementations are not allowed, a random one will be used.");
   }
 
   /**
@@ -77,154 +91,121 @@ public final class CommandHandler {
    * @param e the Discord MessageReceivedEvent
    */
   public void invoke(final @NotNull MessageReceivedEvent e) {
-    final var input = e.getMessage().getContentRaw();
-    final var command = input.split(" ")[0];
+    val input = e.getMessage().getContentRaw();
+    val command = input.split(" ")[0];
 
     if(!command.startsWith(prefix))
       return;
 
     if(command.equalsIgnoreCase(prefix + "help")) {
       if(!help.isEmpty()) {
-        final var testImpl = help.iterator().next();
-
-        if(HelpInt.class.isAssignableFrom(testImpl)) {
-          try {
-            ((HelpInt) testImpl.getDeclaredConstructor().newInstance()).help(e);
-            return;
-          }
-
-          catch(final @NotNull Exception ex) {
-            ex.printStackTrace();
-          }
-        }
-
-        System.err.println("The help class is not implementing HelpInt.");
+        help.getFirst().help(e);
+        return;
       }
 
       help(e);
       return;
     }
 
-    final var invokables = new ArrayList<Invokable>();
-    final var injections = new HashMap<Class<? extends Annotation>, CommandArg>();
-
-    implParam.forEach(impl -> {
-      if(!CommandArg.class.isAssignableFrom(impl))
-        return;
-
-      try {
-        final var instance = impl.getDeclaredConstructor().newInstance();
-
-        final var commandArg = (CommandArg) instance;
-
-        atParam.forEach(at -> {
-          if(at.getSimpleName().equals(impl.getSimpleName())) // noinspection unchecked
-            injections.put((Class<? extends Annotation>) at, commandArg);
-        });
-      }
-
-      catch(final @NotNull Exception ex) {
-        ex.printStackTrace();
-      }
-    });
-
-    commandClass.forEach(i -> {
-      final var instance = applicationContext.getBean(i);
-
-      for(final var method: i.getDeclaredMethods())
-        if(method.isAnnotationPresent(Command.class))
-          invokables.add(new Invokable(instance, method));
-    });
-
-    for(final var invokable: invokables) {
-      final var method = invokable.method;
-      final var commandAt = method.getAnnotation(Command.class);
-      final var value = commandAt.value();
-
-      if(!command.equalsIgnoreCase(prefix + (value.isEmpty() ? method.getName() : value)) &&
-         Arrays.stream(commandAt.aliases()).noneMatch(alias ->
-           command.equalsIgnoreCase(prefix + alias)))
-        continue;
-
-      final var parameters = method.getParameters();
-      final var args = new Object[parameters.length];
-
-      for(int i = 0; i < parameters.length; i++) {
-        final var annotation = parameters[i].getAnnotations()[0];
-        final var atType = annotation.annotationType();
-
-        if(!injections.containsKey(atType))
+    for(val bean: commandBeans) {
+      for(val method: bean.getClass().getDeclaredMethods()) {
+        if(!method.isAnnotationPresent(Command.class))
           continue;
 
-        args[i] = injections.get(atType).value(e, annotation);
-      }
+        val commandAt = method.getAnnotation(Command.class);
 
-      try {
-        final var output = method.invoke(invokable.parent, args);
-        final var ats = method.getAnnotatedReturnType().getAnnotations();
+        if(!command.equalsIgnoreCase(prefix + (commandAt.value().isEmpty() ? method.getName() : commandAt.value())) &&
+           Arrays.stream(commandAt.aliases()).noneMatch(alias -> command.equalsIgnoreCase(prefix + alias)))
+          continue;
 
-        var success = false;
-
-        if(ats.length > 0) {
-          final var at = ats[0];
-
-          for(final var impl: implRet) {
-            if(!ReturnType.class.isAssignableFrom(impl) ||
-              !at.annotationType().getSimpleName().equals(impl.getSimpleName()))
-              continue;
-
-            ((ReturnType) impl.getDeclaredConstructor().newInstance()).action(e, output, at);
-            success = true;
-
-            break;
-          }
+        try {
+          handleReturnValue(e, method, method.invoke(bean, prepareArguments(e, method)));
         }
 
-        if(success)
-          return;
+        catch(final @NotNull Exception ex) {
+          if(ex instanceof IllegalArgumentException)
+            System.err.println(method.getName() + " has an illegal argument type.");
 
-        final var channel = e.getChannel();
-
-        if(output instanceof String message)
-          channel.sendMessage(message).queue();
-
-        else if(output instanceof EmbedBuilder embed) {
-          if(embed.build().getColor() == null) {
-            try {
-              embed.setColor(Color.decode(color));
-            } catch(final @NotNull Exception _) { }
-          }
-
-          channel.sendMessageEmbeds(embed.build()).queue();
+          else
+            ex.printStackTrace();
         }
-      }
 
-      catch(final @NotNull Exception ex) {
-        if(ex instanceof IllegalArgumentException)
-          System.err.println(invokable.method.getName() + " has an illegal argument type.");
-
-        else
-          ex.printStackTrace();
+        return;
       }
     }
   }
 
+  private Object @NotNull[] prepareArguments(final @NotNull MessageReceivedEvent e, final @NotNull Method method) {
+    val parameters = method.getParameters();
+    val args = new Object[parameters.length];
+
+    for(var i = 0; i < parameters.length; i++) {
+      val parameter = parameters[i];
+
+      if(parameter.getAnnotations().length == 0)
+        continue;
+
+      val annotation = parameter.getAnnotations()[0];
+      val handler = parameterInjections.get(annotation.annotationType());
+
+      if(handler != null)
+        args[i] = handler.value(e, annotation);
+    }
+
+    return args;
+  }
+
+  private void handleReturnValue(final @NotNull MessageReceivedEvent e, final @NotNull Method method,
+                                 final @Nullable Object output) {
+    if(output == null)
+      return;
+
+    val returnAnnotations = method.getAnnotatedReturnType().getAnnotations();
+
+    if(returnAnnotations.length > 0) {
+      val annotation = returnAnnotations[0];
+      val handler = returnInjections.get(annotation.annotationType());
+
+      if(handler != null) {
+        handler.action(e, output, annotation);
+        return;
+      }
+    }
+
+    if(output instanceof String message)
+      e.getChannel().sendMessage(message).queue();
+
+    else if(output instanceof EmbedBuilder embed) {
+      if(embed.build().getColor() == null && color != null) {
+        try {
+          embed.setColor(Color.decode(color));
+        }
+
+        catch(final @NotNull Exception ignored) { }
+      }
+
+      e.getChannel().sendMessageEmbeds(embed.build()).queue();
+    }
+  }
+
   private void help(final @NotNull MessageReceivedEvent e) {
-    final var splitted = e.getMessage().getContentRaw().split(" ");
+    val splitted = e.getMessage().getContentRaw().split(" ");
 
-    final var categories = new HashSet<String>();
-    final var helpAts = new HashMap<ArrayList<String>, Help>();
-    final var helpCategories = new HashMap<Help, String>();
-    final var subcommands = new HashMap<String, Subcommand>();
+    val categories = new HashSet<String>();
+    val helpAts = new HashMap<ArrayList<String>, Help>();
+    val helpCategories = new HashMap<Help, String>();
+    val subcommands = new HashMap<String, Subcommand>();
 
-    commandClass.forEach(at -> {
-      for(final var method: at.getDeclaredMethods()) {
+    commandBeans.forEach(bean -> {
+      val at = bean.getClass();
+
+      for(val method: at.getDeclaredMethods()) {
         if(method.isAnnotationPresent(Command.class) &&
            method.isAnnotationPresent(Help.class)) {
-          final var help = method.getAnnotation(Help.class);
-          final var command = method.getAnnotation(Command.class);
+          val help = method.getAnnotation(Help.class);
+          val command = method.getAnnotation(Command.class);
 
-          final var names = new ArrayList<>(List.of(command.value().isBlank() ? method.getName() :
+          val names = new ArrayList<>(List.of(command.value().isBlank() ? method.getName() :
             command.value()));
 
           names.addAll(Arrays.stream(command.aliases()).toList());
@@ -240,7 +221,7 @@ public final class CommandHandler {
           helpCategories.put(help, category);
         }
 
-        for(final var subcommand: method.getAnnotationsByType(Subcommand.class))
+        for(val subcommand: method.getAnnotationsByType(Subcommand.class))
           subcommands.put(safe(subcommand.name().isBlank() ? method.getName() : subcommand.name()) + "/" +
             safe(subcommand.parent().isBlank() ? method.getName() : subcommand.parent()), subcommand);
       }
@@ -256,11 +237,11 @@ public final class CommandHandler {
       return;
     }
 
-    final var value = (splitted.length == 1 && categories.size() == 1) ? categories.iterator().next() :
+    val value = (splitted.length == 1 && categories.size() == 1) ? categories.iterator().next() :
       splitted[1].toLowerCase().trim();
 
     if(categories.contains(value)) {
-      final var commands = new HashSet<String>();
+      val commands = new HashSet<String>();
 
       helpAts.forEach((name, help) -> {
         if(!helpCategories.get(help).equalsIgnoreCase(value))
@@ -274,14 +255,14 @@ public final class CommandHandler {
       return;
     }
 
-    final var found = new AtomicBoolean(false);
+    val found = new AtomicBoolean(false);
 
     helpAts.forEach((names, help) -> {
       if(names.stream().noneMatch(s -> s.equalsIgnoreCase(value)))
         return;
 
-      final var subDesc = new StringBuilder();
-      final var sorted = new TreeMap<>(subcommands);
+      val subDesc = new StringBuilder();
+      val sorted = new TreeMap<>(subcommands);
 
       sorted.forEach((subName, subcommand) -> {
         if(names.stream().noneMatch(name -> (subcommand.parent().isBlank() ? subName : safe(subcommand.parent()))
@@ -304,7 +285,7 @@ public final class CommandHandler {
           .append(subcommand.description());
       });
 
-      final var aliases = names.subList(1, names.size());
+      val aliases = names.subList(1, names.size());
 
       var desc = (!aliases.isEmpty() ? "**Aliases:** " + String.join(", ", aliases) : "") +
         "\n**Category:** " + toCamelCase(helpCategories.get(help)) + "\n**Usage:** " + prefix + names.getFirst();
@@ -333,7 +314,7 @@ public final class CommandHandler {
 
   private void sendEmbed(final @NotNull MessageReceivedEvent e, final @NotNull String title,
                          final @NotNull String description, final @NotNull String footer) {
-    final var embed = new EmbedBuilder();
+    val embed = new EmbedBuilder();
 
     embed.setTitle(title);
 
@@ -349,7 +330,7 @@ public final class CommandHandler {
 
   private void sendEmbed(final @NotNull MessageReceivedEvent e, final @NotNull HashSet<String> list,
                          final @NotNull String title, final @NotNull String object) {
-    final var sorted = new ArrayList<>(list);
+    val sorted = new ArrayList<>(list);
     Collections.sort(sorted);
 
     sendEmbed(e, title, "- **" + String.join("**;\n- **", sorted.stream()
@@ -370,6 +351,4 @@ public final class CommandHandler {
       word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
       .collect(Collectors.joining(" "));
   }
-
-  private record Invokable(Object parent, Method method) { }
 }
