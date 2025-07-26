@@ -15,4 +15,5 @@ public final class User {
   public int buizel;
   public int xps;
   public Date joined;
+  public boolean here;
 }

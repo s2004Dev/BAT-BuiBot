@@ -18,6 +18,30 @@ public final class SharedResources {
   @Value("${app.outputChannel:#{null}}")
   private Long outputChannelId;
 
+  @Value("${app.token:#{null}}")
+  public String token;
+
+  @Value("${app.mainGuild:#{null}}")
+  public Long mainGuildId;
+
+  @Value("${app.roleplayChannel:#{null}}")
+  public Long roleplayChannel;
+
+  @Value("${app.roleplayRole:#{null}}")
+  public Long roleplayRole;
+
+  @Value("${app.kohai:#{null}}")
+  public Long kohai;
+
+  @Value("${app.mainChannel:#{null}}")
+  public Long mainChannel;
+
+  @Value("${app.unverified:#{null}}")
+  public Long unverified;
+
+  @Value("${app.staff:#{null}}")
+  public Long staff;
+
   public @NotNull TextChannel getOutputChannel() {
     if(outputChannel == null) {
       if(mainGuild == null)

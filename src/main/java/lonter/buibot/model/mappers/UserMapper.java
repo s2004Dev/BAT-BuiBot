@@ -2,7 +2,6 @@ package lonter.buibot.model.mappers;
 
 import lonter.buibot.model.entities.User;
 
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -28,26 +27,26 @@ public interface UserMapper {
   @Select("SELECT EXISTS (SELECT 1 FROM users WHERE id = #{ id })")
   boolean exists(final long id);
 
-  @Insert("INSERT INTO users(id, bui, buizel, xps, joined, here) " +
-          "VALUES(#{ id }, NULL, NULL, 0, CURRENT_TIMESTAMP, true)")
+  @Select("INSERT INTO users(id, bui, buizel, xps, joined, here) " +
+          "VALUES(#{ id }, NULL, NULL, 0, CURRENT_TIMESTAMP, TRUE) RETURNING *")
   @NotNull User insert(final long id);
 
   @Update("UPDATE users SET xps = #{ xps } WHERE id = #{ id }")
   void updateXps(final long id, final int xps);
 
-//  @Update("UPDATE users SET here = #{ here } WHERE id = #{ id }")
-//  void updateHere(final long id, final boolean here);
+  @Update("UPDATE users SET here = #{ here } WHERE id = #{ id }")
+  void updateHere(final long id, final boolean here);
 
   @Update("UPDATE users SET bui = #{ bui }, buizel = #{ buizel } WHERE id = #{ id }")
   void updateBuis(final @NotNull User user);
 
-  @Select("SELECT id, ${ category } FROM users WHERE ${ category } NOT NULL AND has_left = false " +
-          "ORDER BY ${ category } DESC OFFSET 10")
+  @Select("SELECT id, ${ category } FROM users WHERE ${ category } IS NOT NULL AND here = TRUE " +
+          "ORDER BY ${ category } DESC LIMIT 10")
   @NotNull ArrayList<User> findAllForRank(final @NotNull String category);
 
-  @Select("SELECT COUNT(*) FROM users")
+  @Select("SELECT COUNT(*) FROM users WHERE xps IS NOT NULL AND here = TRUE")
   @NotNull Integer getCount();
 
-  @Select("SELECT ROW_NUMBER() FROM users WHERE id = #{ id }")
+  @Select("SELECT ROW_NUMBER() OVER (ORDER BY xps) FROM users WHERE id = #{ id }")
   @NotNull Integer getIndex(final long id);
 }

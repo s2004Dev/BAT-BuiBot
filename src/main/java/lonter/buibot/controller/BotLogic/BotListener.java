@@ -1,10 +1,13 @@
 package lonter.buibot.controller.BotLogic;
 
+import static lonter.buibot.controller.commands.Util.send;
+
 import lombok.AllArgsConstructor;
 import lombok.val;
 
 import lonter.bat.CommandHandler;
 
+import lonter.buibot.model.mappers.UserMapper;
 import net.dv8tion.jda.api.entities.MessageType;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -24,7 +27,7 @@ public final class BotListener extends ListenerAdapter {
   private final BeforeInvoke before;
   private final AfterInvoke after;
   private final SharedResources shared;
-  private final Long mainGuildId;
+  private final UserMapper userMapper;
 
   @Override
   public void onMessageReceived(final @NotNull MessageReceivedEvent e) {
@@ -39,6 +42,11 @@ public final class BotListener extends ListenerAdapter {
 
     if(author.isBot())
       return;
+
+    if(!e.isFromGuild()) {
+      send("Bui! You cannot interact with me outside of the server!", e);
+      return;
+    }
 
     try {
       before.logic(e);
@@ -64,12 +72,12 @@ public final class BotListener extends ListenerAdapter {
 
   @Override
   public void onGuildReady(final @NotNull GuildReadyEvent e) {
-    if(mainGuildId == null) {
+    if(shared.mainGuildId == null) {
       System.out.println("mainGuildId is null.");
       System.exit(-1);
     }
 
-    shared.mainGuild = shared.shardManager.getGuildById(mainGuildId);
+    shared.mainGuild = shared.shardManager.getGuildById(shared.mainGuildId);
 
     if(shared.mainGuild != null)
       return;
@@ -89,104 +97,123 @@ public final class BotListener extends ListenerAdapter {
   }
 
   private void reactionLogic(final @NotNull GenericMessageReactionEvent e, final boolean add) {
-    if(e.getMessageIdLong() != 1067801438102761567L || !e.getEmoji().getName().equals("⭐"))
+    if(shared.roleplayChannel == null) {
+      System.out.println("roleplay is null.");
+      return;
+    }
+
+    if(e.getMessageIdLong() != shared.roleplayChannel || !e.getEmoji().getName().equals("⭐"))
       return;
 
     val member = e.getMember();
-    val guild = e.getGuild();
-    val role = guild.getRoleById(1060231459773886616L);
+    val roleplay = shared.mainGuild.getRoleById(shared.roleplayRole);
 
     if(member == null)
       return;
 
-    val roles = member.getRoles().contains(role);
+    val roles = member.getRoles().contains(roleplay);
 
-    if(add == roles || role == null)
+    if(add == roles || roleplay == null)
       return;
 
-    (add ? guild.addRoleToMember(member, role) : guild.removeRoleFromMember(member, role)).queue();
+    (add ? shared.mainGuild.addRoleToMember(member, roleplay) :
+      shared.mainGuild.removeRoleFromMember(member, roleplay)).queue();
   }
 
   @Override
-  public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent e) {
-    val guild = e.getGuild();
-
-    if(guild.getIdLong() != 1045727530390392952L)
+  public void onGuildMemberJoin(final @NotNull GuildMemberJoinEvent e) {
+    if(e.getUser().isBot())
       return;
 
     val member = e.getMember();
-    val role = guild.getRoleById(1070415674851209236L);
+    val kohai = shared.mainGuild.getRoleById(shared.kohai);
+    val id = member.getIdLong();
 
-    if(member.getRoles().contains(role))
+    if(userMapper.exists(id))
+      userMapper.updateHere(id, true);
+
+    else
+      userMapper.insert(member.getIdLong());
+
+    if(member.getRoles().contains(kohai))
       return;
 
-    if(role == null)
+    if(kohai == null) {
+      System.out.println("Kohai role is null.");
       return;
+    }
 
-    guild.addRoleToMember(member, role).queue();
+    shared.mainGuild.addRoleToMember(member, kohai).queue();
 
-    val channel = guild.getTextChannelById(1045735795828474027L);
+    val channel = shared.mainGuild.getTextChannelById(shared.mainChannel);
 
-    if(channel == null)
+    if(channel == null) {
+      System.out.println("onGuildMemberJoin(): Main channel is null.");
       return;
+    }
 
     channel.sendMessage(member.getAsMention() + " joined.").queue();
   }
 
   @Override
   public void onGuildMemberRemove(@NotNull GuildMemberRemoveEvent e) {
-    val guild = e.getGuild();
-
-    if(guild.getIdLong() != 1045727530390392952L)
+    if(e.getUser().isBot())
       return;
 
     val member = e.getMember();
 
-    if(member == null)
+    if(member == null) {
+      System.out.println("Left member is null.");
       return;
+    }
 
-    val unverified = guild.getRoleById(1070415674851209236L);
+    userMapper.updateHere(member.getIdLong(), false);
 
-    if(unverified == null)
+    val unverified = shared.mainGuild.getRoleById(shared.unverified);
+
+    if(unverified == null) {
+      System.out.println("Unverified role is null.");
       return;
+    }
 
     if(member.getRoles().contains(unverified)) {
-      val channel = guild.getTextChannelById(1045735795828474027L);
+      val channel = shared.mainGuild.getTextChannelById(shared.staff);
 
-      if(channel == null)
+      if(channel == null) {
+        System.out.println("Staff channel is null.");
         return;
+      }
 
       channel.sendMessage(member.getAsMention() + "(" + member.getEffectiveName() + ") left.").queue();
 
       return;
     }
 
-    val general = guild.getTextChannelById(1045727531766132848L);
+    val general = shared.mainGuild.getTextChannelById(shared.mainChannel);
 
-    if(general == null)
+    if(general == null) {
+      System.out.println("onGuildMemberRemove(): Main channel is null.");
       return;
+    }
 
     general.sendMessage(member.getAsMention() + "(" + member.getEffectiveName() + ") left the valley...").queue();
   }
 
   @Override
   public void onGuildMemberRoleAdd(@NotNull GuildMemberRoleAddEvent e) {
-    val guild = e.getGuild();
-
-    if(guild.getIdLong() != 1045727530390392952L)
-      return;
-
     val member = e.getMember();
     val roles = e.getRoles();
-    val role = guild.getRoleById(1045734718655692841L);
+    val kohai = shared.mainGuild.getRoleById(shared.kohai);
 
-    if(!roles.contains(role))
+    if(!roles.contains(kohai))
       return;
 
-    val general = guild.getTextChannelById(1045727531766132848L);
+    val general = shared.mainGuild.getTextChannelById(shared.mainChannel);
 
-    if(general == null)
+    if(general == null) {
+      System.out.println("onGuildMemberRoleAdd(): Main channel is null.");
       return;
+    }
 
     general.sendMessage("Bui! Welcome " + member.getAsMention() + "! Remember to keep an eye on " +
       "<#1051122051466936340> and, if you want, you can introduce yourself at <#1046927743188729876>, have a nice " +

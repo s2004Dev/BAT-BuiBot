@@ -5,6 +5,7 @@ import lombok.val;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -31,11 +32,21 @@ public final class Util {
       if(!(ex instanceof NumberFormatException))
         return -2;
 
-      val user = e.getJDA().getUserByTag(input);
+      try {
+        val user = e.getJDA().getUserByTag(input);
 
-      return user == null ? countOccurrences(input, "#") == 1 && input.split("#")[1].matches("-?\\d+") ? 0 : -1 :
-        user.getIdLong();
+        return user == null ? countOccurrences(input, "#") == 1 && input.split("#")[1].matches("-?\\d+") ? 0 : -1 :
+          user.getIdLong();
+      }
+
+      catch(final @NotNull Exception ignored) {
+        return -1;
+      }
     }
+  }
+
+  public static boolean self(final long id, final @NotNull MessageReceivedEvent e) {
+    return id == e.getJDA().getSelfUser().getIdLong();
   }
 
   public static int countOccurrences(final @NotNull String haystack, final @NotNull String needle) {
@@ -69,6 +80,18 @@ public final class Util {
     };
   }
 
+  public static <T extends Number> @NotNull String plural(final @Nullable T input) {
+    return switch(input) {
+      case Byte i -> i == 1 ? "" : "s";
+      case Short i -> i == 1 ? "" : "s";
+      case Integer i -> i == 1 ? "" : "s";
+      case Long i -> i == 1 ? "" : "s";
+      case Float i -> i == 1. ? "" : "s";
+      case Double i -> i == 1. ? "" : "s";
+      case null, default -> "s";
+    };
+  }
+
   public static void send(final @NotNull String message, final @NotNull MessageReceivedEvent e) {
     e.getChannel().sendMessage(message).queue();
   }
@@ -76,5 +99,15 @@ public final class Util {
   public static int map(final int x, final int inMin, final int inMax, final int outMin,
                           final int outMax) {
     return (x-inMin)*(outMax-outMin)/(inMax-inMin)+outMin;
+  }
+
+  public static String @NotNull[] removeFirst(final String @NotNull[] input) {
+    val newArray = new String[input.length-1];
+    System.arraycopy(input, 1, newArray, 0, newArray.length);
+    return newArray;
+  }
+
+  public static @NotNull String genitive(final @NotNull String input) {
+    return input + (input.endsWith("s") ? "'" : "'s");
   }
 }

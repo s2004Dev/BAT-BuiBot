@@ -1,9 +1,11 @@
 package lonter.buibot.controller.BotLogic;
 
+import lombok.AllArgsConstructor;
 import lombok.val;
 
 import lonter.bat.CommandHandler;
 
+import lonter.buibot.model.mappers.UserMapper;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -12,40 +14,26 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-@Service
+@Service @AllArgsConstructor
 public final class Bot {
-  @Value("${app.token:#{null}}")
-  private String token;
-
-  @Value("${app.mainGuild:#{null}}")
-  private Long mainGuildId;
-
   private final CommandHandler handler;
   private final BeforeInvoke before;
   private final AfterInvoke after;
   private final SharedResources shared;
-
-  private Bot(final @NotNull CommandHandler handler, final @NotNull BeforeInvoke before,
-              final @NotNull AfterInvoke after, final @NotNull SharedResources shared) {
-    this.handler = handler;
-    this.before = before;
-    this.after = after;
-    this.shared = shared;
-  }
+  private final UserMapper userMapper;
 
   @EventListener(ApplicationReadyEvent.class)
   private void start() {
-    if(token == null) {
+    if(shared.token == null) {
       System.out.println("token is null.");
       System.exit(-1);
     }
 
-    val builder = DefaultShardManagerBuilder.createDefault(token);
+    val builder = DefaultShardManagerBuilder.createDefault(shared.token);
 
     builder.setStatus(OnlineStatus.IDLE);
     builder.setActivity(Activity.watching("Buizels"));
@@ -56,7 +44,7 @@ public final class Bot {
       builder.setChunkingFilter(ChunkingFilter.ALL);
 
       shared.shardManager = builder.build();
-      shared.shardManager.addEventListener(new BotListener(handler, before, after, shared, mainGuildId));
+      shared.shardManager.addEventListener(new BotListener(handler, before, after, shared, userMapper));
 
       while(shared.mainGuild == null)
         Thread.onSpinWait();
