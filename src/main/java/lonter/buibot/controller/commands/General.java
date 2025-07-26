@@ -54,7 +54,7 @@ public class General {
     return "Bui! My ping is: **" + e.getJDA().getGatewayPing() + "ms**.";
   }
 
-  @Command(aliases = "lb") @Help(description = "Bui will send the list of every bui things sent.", usage = "<args>")
+  @Command(aliases = "lb") @Help(description = "Bui will send the list of all the bui things sent.", usage = "<args>")
   @Subcommand(name = "bui", description = "Bui will send the list of the people who said bui the most.")
   @Subcommand(name = "buizel", description = "Bui will send the list of the people who said buizel the most.")
   @Subcommand(name = "levels", description = "Bui will send the list of the people who talked the most.")
@@ -127,7 +127,7 @@ public class General {
     return embed.setDescription(text.toString()).setFooter("Bui, remember to say bui!");
   }
 
-  @Command(aliases = "pfp")
+  @Command(value = "profilepicture", aliases = "pfp")
   @Help(description = "Bui will send someone's profile picture.", usage = "[id] | [args] [id]")
   @Subcommand(name = "local", description = "Bui will send someone's local profile picture", usage = "[id]")
   public @NotNull Object profilePicture(final @Args String @NotNull[] args,
