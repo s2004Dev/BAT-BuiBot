@@ -1,4 +1,4 @@
-package lonter.buibot.controller.commands;
+package lonter.buibot.controller.commands.functions;
 
 import lombok.AllArgsConstructor;
 

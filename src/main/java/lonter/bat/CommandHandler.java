@@ -22,7 +22,6 @@ import java.awt.Color;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -320,7 +319,9 @@ public final class CommandHandler {
 
     try {
       embed.setColor(Color.decode(color));
-    } catch(final @NotNull Exception _) { }
+    }
+
+    catch(final @NotNull Exception _) { }
 
     embed.setDescription(description);
     embed.setFooter(footer);

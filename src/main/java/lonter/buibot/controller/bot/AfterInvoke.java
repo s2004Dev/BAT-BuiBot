@@ -12,8 +12,11 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import java.time.MonthDay;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 @Component @AllArgsConstructor
 public final class AfterInvoke {
@@ -34,6 +37,10 @@ public final class AfterInvoke {
 
     if(msgRaw.contains(":3"))
       colonThree(e);
+
+    if(MonthDay.now(ZoneId.of("Europe/Rome")).equals(MonthDay.of(1, 9)) && (msgRaw.contains("hap") ||
+       msgRaw.contains("birth")))
+      birthday(msgRaw, e);
 
     if(!msgRaw.contains("bui"))
       return;
@@ -57,6 +64,13 @@ public final class AfterInvoke {
     user.setBuizel(user.getBuizel()+buizel);
 
     userMapper.updateBuis(user);
+  }
+
+  private void birthday(final @NotNull String input, final @NotNull MessageReceivedEvent e) {
+    if(!Pattern.compile("<@(\\d+)>").matcher(input).find() && !input.contains("buibot"))
+      return;
+
+    e.getMessage().reply("Bui! Thank you !! <:Amazed:1087132828585701498>").queue();
   }
 
   private void bui(final @NotNull MessageReceivedEvent e) {

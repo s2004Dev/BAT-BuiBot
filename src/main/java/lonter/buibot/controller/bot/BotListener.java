@@ -20,9 +20,14 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
-@AllArgsConstructor
+@Component @AllArgsConstructor
 public final class BotListener extends ListenerAdapter {
+  private static final Logger log = LoggerFactory.getLogger(BotListener.class);
+
   private final CommandHandler handler;
   private final BeforeInvoke before;
   private final AfterInvoke after;
@@ -57,23 +62,23 @@ public final class BotListener extends ListenerAdapter {
     catch(final @NotNull Exception ex) {
       ex.printStackTrace();
 
-      System.out.println("Author: " + author.getName());
-      System.out.println("Message: " + message.getContentRaw());
+      log.warn("onMessageReceived(): author: {}", author.getName());
+      log.warn("onMessageReceived(): message: {}", message.getContentRaw());
 
       if(!e.isFromGuild())
         return;
 
       val channel = e.getChannel();
 
-      System.out.println("Channel: " + channel.getName() + "; id: " + channel.getId());
-      System.out.println("Guild: " + e.getGuild().getName());
+      log.warn("onMessageReceived(): channel: {}; id: {}", channel.getName(), channel.getId());
+      log.warn("onMessageReceived(): guild: {}", e.getGuild().getName());
     }
   }
 
   @Override
   public void onGuildReady(final @NotNull GuildReadyEvent e) {
     if(shared.mainGuildId == null) {
-      System.out.println("mainGuildId is null.");
+      log.warn("onGuildReady(): mainGuildId is null.");
       System.exit(-1);
     }
 
@@ -82,7 +87,7 @@ public final class BotListener extends ListenerAdapter {
     if(shared.mainGuild != null)
       return;
 
-    System.out.println("Main Guild is null.");
+    log.warn("onGuildReady(): main guild is null.");
     System.exit(-1);
   }
 
@@ -98,18 +103,26 @@ public final class BotListener extends ListenerAdapter {
 
   private void reactionLogic(final @NotNull GenericMessageReactionEvent e, final boolean add) {
     if(shared.roleplayChannel == null) {
-      System.out.println("roleplay is null.");
-      return;
+      log.warn("reactionLogic() - {}: roleplay is null.", add);
+      System.exit(-1);
     }
 
     if(e.getMessageIdLong() != shared.roleplayChannel || !e.getEmoji().getName().equals("⭐"))
       return;
 
     val member = e.getMember();
+
+    if(shared.roleplayRole == null) {
+      log.warn("reactionLogic() - {}: roleplayRole id is null.", add);
+      System.exit(-1);
+    }
+
     val roleplay = shared.mainGuild.getRoleById(shared.roleplayRole);
 
-    if(member == null)
+    if(member == null) {
+      log.warn("reactionLogic() - {}: member is null.", add);
       return;
+    }
 
     val roles = member.getRoles().contains(roleplay);
 
@@ -126,29 +139,40 @@ public final class BotListener extends ListenerAdapter {
       return;
 
     val member = e.getMember();
-    val kohai = shared.mainGuild.getRoleById(shared.kohai);
+
+    if(shared.unverified == null) {
+      log.warn("onGuildMemberJoin(): unverified id is null.");
+      System.exit(-1);
+    }
+
+    val unverified = shared.mainGuild.getRoleById(shared.unverified);
     val id = member.getIdLong();
 
     if(userMapper.exists(id))
-      userMapper.updateHere(id, true);
+      userMapper.update(id, "here", true);
 
     else
       userMapper.insert(member.getIdLong());
 
-    if(member.getRoles().contains(kohai))
+    if(member.getRoles().contains(unverified))
       return;
 
-    if(kohai == null) {
-      System.out.println("Kohai role is null.");
+    if(unverified == null) {
+      log.warn("onGuildMemberJoin(): unverified role is null.");
       return;
     }
 
-    shared.mainGuild.addRoleToMember(member, kohai).queue();
+    shared.mainGuild.addRoleToMember(member, unverified).queue();
+
+    if(shared.mainChannel == null) {
+      log.warn("onGuildMemberJoin(): mainChannel id is null.");
+      System.exit(-1);
+    }
 
     val channel = shared.mainGuild.getTextChannelById(shared.mainChannel);
 
     if(channel == null) {
-      System.out.println("onGuildMemberJoin(): Main channel is null.");
+      log.warn("onGuildMemberJoin(): Main channel is null.");
       return;
     }
 
@@ -163,24 +187,34 @@ public final class BotListener extends ListenerAdapter {
     val member = e.getMember();
 
     if(member == null) {
-      System.out.println("Left member is null.");
+      log.warn("onGuildMemberRemove(): member is null.");
       return;
     }
 
-    userMapper.updateHere(member.getIdLong(), false);
+    userMapper.update(member.getIdLong(), "here", false);
+
+    if(shared.unverified == null) {
+      log.warn("onGuildMemberRemove(): unverified id is null.");
+      System.exit(-1);
+    }
 
     val unverified = shared.mainGuild.getRoleById(shared.unverified);
 
     if(unverified == null) {
-      System.out.println("Unverified role is null.");
+      log.warn("onGuildMemberRemove(): unverified role is null.");
       return;
     }
 
     if(member.getRoles().contains(unverified)) {
+      if(shared.staff == null) {
+        log.warn("onGuildMemberRemove(): staff id is null.");
+        System.exit(-1);
+      }
+
       val channel = shared.mainGuild.getTextChannelById(shared.staff);
 
       if(channel == null) {
-        System.out.println("Staff channel is null.");
+        log.warn("onGuildMemberRemove(): staff channel is null.");
         return;
       }
 
@@ -189,10 +223,15 @@ public final class BotListener extends ListenerAdapter {
       return;
     }
 
+    if(shared.mainChannel == null) {
+      log.warn("onGuildMemberRemove(): mainChannel id is null.");
+      System.exit(-1);
+    }
+
     val general = shared.mainGuild.getTextChannelById(shared.mainChannel);
 
     if(general == null) {
-      System.out.println("onGuildMemberRemove(): Main channel is null.");
+      log.warn("onGuildMemberRemove(): Main channel is null.");
       return;
     }
 
@@ -203,15 +242,26 @@ public final class BotListener extends ListenerAdapter {
   public void onGuildMemberRoleAdd(@NotNull GuildMemberRoleAddEvent e) {
     val member = e.getMember();
     val roles = e.getRoles();
+
+    if(shared.kohai == null) {
+      log.warn("onGuildMemberRoleAdd(): kohai role is null.");
+      System.exit(-1);
+    }
+
     val kohai = shared.mainGuild.getRoleById(shared.kohai);
 
     if(!roles.contains(kohai))
       return;
 
+    if(shared.mainChannel == null) {
+      log.warn("onGuildMemberRoleAdd(): mainChannel id is null.");
+      System.exit(-1);
+    }
+
     val general = shared.mainGuild.getTextChannelById(shared.mainChannel);
 
     if(general == null) {
-      System.out.println("onGuildMemberRoleAdd(): Main channel is null.");
+      log.warn("onGuildMemberRoleAdd(): Main channel is null.");
       return;
     }
 

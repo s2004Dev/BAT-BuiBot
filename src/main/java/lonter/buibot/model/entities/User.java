@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.MonthDay;
+import java.time.ZoneId;
 import java.util.Date;
 
 @Data @AllArgsConstructor
@@ -15,5 +17,7 @@ public final class User {
   public int buizel;
   public int xps;
   public Date joined;
+  public MonthDay birthday;
+  public ZoneId timezone;
   public boolean here;
 }

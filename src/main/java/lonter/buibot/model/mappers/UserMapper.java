@@ -21,8 +21,8 @@ public interface UserMapper {
 //  @Select("SELECT joined FROM users WHERE id = #{ id }")
 //  @NotNull Optional<Integer> findJoinedById(final long id);
 
-  @Select("SELECT birthday FROM users WHERE id = #{ id }")
-  @NotNull Optional<Integer> findBirthdayById(final long id);
+  @Select("SELECT birthday, timezone FROM users WHERE id = #{ id }")
+  @NotNull Optional<User> findBirthdayById(final long id);
 
   @Select("SELECT EXISTS (SELECT 1 FROM users WHERE id = #{ id })")
   boolean exists(final long id);
@@ -31,18 +31,21 @@ public interface UserMapper {
           "VALUES(#{ id }, NULL, NULL, 0, CURRENT_TIMESTAMP, TRUE) RETURNING *")
   @NotNull User insert(final long id);
 
-  @Update("UPDATE users SET xps = #{ xps } WHERE id = #{ id }")
-  void updateXps(final long id, final int xps);
-
-  @Update("UPDATE users SET here = #{ here } WHERE id = #{ id }")
-  void updateHere(final long id, final boolean here);
+  @Update("UPDATE users SET ${ category } = #{ value } WHERE id = #{ id }")
+  void update(final long id, final @NotNull String category, final Object value);
 
   @Update("UPDATE users SET bui = #{ bui }, buizel = #{ buizel } WHERE id = #{ id }")
   void updateBuis(final @NotNull User user);
 
+  @Update("UPDATE users SET birthday = #{ birthday }, timezone = #{ timezone } WHERE id = #{ id }")
+  void updateBirth(final @NotNull User user);
+
   @Select("SELECT id, ${ category } FROM users WHERE ${ category } IS NOT NULL AND here = TRUE " +
           "ORDER BY ${ category } DESC LIMIT 10")
   @NotNull ArrayList<User> findAllForRank(final @NotNull String category);
+
+  @Select("SELECT id, birthday, timezone FROM users WHERE birthday IS NOT NULL AND here = TRUE")
+  @NotNull ArrayList<User> findAllForBirth();
 
   @Select("SELECT COUNT(*) FROM users WHERE xps IS NOT NULL AND here = TRUE")
   @NotNull Integer getCount();

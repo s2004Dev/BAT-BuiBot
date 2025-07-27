@@ -11,42 +11,107 @@ import lonter.bat.annotations.help.Help;
 import lonter.bat.annotations.help.Subcommand;
 import lonter.bat.annotations.parameters.ats.Args;
 import lonter.bat.annotations.parameters.ats.Event;
+import lonter.buibot.controller.bot.SharedResources;
+import lonter.buibot.controller.commands.functions.BirthdayService;
+import lonter.buibot.controller.commands.functions.InvalidCityException;
+import lonter.buibot.controller.commands.functions.XPManager;
 import lonter.buibot.model.mappers.UserMapper;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.time.DateTimeException;
+import java.time.MonthDay;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @CommandClass @AllArgsConstructor
 public class General {
+  private static final Logger log = LoggerFactory.getLogger(General.class);
+
   private final UserMapper userMapper;
   private final XPManager xpManager;
+  private final BirthdayService birthdayService;
+  private final SharedResources shared;
 
-  @Command @Help(description = "Bui will send the birth day of said user.")
+  @Command @Help(description = "Bui will send the birth day of said user.", usage = "[id]")
+  @Subcommand(name = "set", description = "Bui will ask you to set your birthday information.",
+    usage = "<dd/MM timezone>")
   public @NotNull String birthday(final @Args String @NotNull[] args,
                                   final @Event @NotNull MessageReceivedEvent e) {
+    if(args.length > 0 && args[0].equals("set")) {
+      val wrongFormat = "Bui! Wrong format! `" + shared.prefix + "birthday set dd/MM timezone`.";
+
+      if(args.length < 3)
+        return wrongFormat;
+
+      val split = args[1].split("/");
+
+      if(split.length != 2)
+        return wrongFormat;
+
+      try {
+        val day = Integer.parseInt(split[0]);
+        val month = Integer.parseInt(split[1]);
+
+        MonthDay.of(month, day);
+
+        birthdayService.setBirthday(e.getAuthor().getIdLong(), day, month, args[2]);
+
+        return "Bui! Now I know your birthday!";
+      }
+
+      catch(final @NotNull Exception ex) {
+        return switch(ex) {
+          case DateTimeException _ -> "Bui! That day does not exist!";
+          case InvalidCityException _ -> ex.getMessage();
+
+          default -> {
+            ex.printStackTrace();
+            yield wrongFormat;
+          }
+        };
+      }
+    }
+
     val id = getUserId(args, e);
 
     if(self(id, e))
-      return "Bui! My next birthday is 09/01/year! <:Star:1100387219975442502>";
+      return "Bui! My next birthday is " + date("09", "01") + " (Europe/Rome)! <:Star:1100387219975442502>";
 
     if(id < 1)
       return sendMessageMention(id);
 
     val found = userMapper.findBirthdayById(id);
+    val idk = "Bui! I don't know this user birthday...";
 
     if(found.isEmpty())
-      return "Bui! I don't know this user birthday...";
+      return idk;
 
-    val user = e.getGuild().getMemberById(id);
+    val member = e.getGuild().getMemberById(id);
 
-    return user == null ? "Bui! Something went wrong..." :
-      "Bui! " + genitive(user.getEffectiveName()) + " next birthday is " + found.get();
+    if(member == null) {
+      log.warn("birthday(): No member found with id {}.", id);
+      return "Bui! Something went wrong...";
+    }
+
+    val user = found.get();
+    val birthday = user.birthday;
+    val timezone = user.timezone;
+
+    if(birthday == null || timezone == null) {
+      log.warn("birthday(): No birthday information found null for id {}.", id);
+      return idk;
+    }
+
+    return "Bui! " + genitive(member.getEffectiveName()) + " next birthday is " +
+      date(String.valueOf(birthday.getDayOfMonth()), String.valueOf(birthday.getMonth().getValue())) +
+      " (" + timezone + ")!";
   }
 
   @Command @Help(description = "Bui will send the current latency.")
@@ -95,7 +160,7 @@ public class General {
       val member = e.getGuild().getMemberById(user.id);
 
       if(member == null) {
-        System.out.println("Member " + user.id + " was found null.");
+        log.warn("leaderboard(): member {} was found null.", user.id);
         return;
       }
 

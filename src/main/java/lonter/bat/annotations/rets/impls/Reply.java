@@ -37,7 +37,9 @@ public final class Reply extends ReturnType {
         if(embed.build().getColor() == null) {
           try {
             embed.setColor(Color.decode(color));
-          } catch(final @NotNull Exception _) { }
+          }
+
+          catch(final @NotNull Exception _) { }
         }
 
         e.getMessage().replyEmbeds(embed.build()).queue();

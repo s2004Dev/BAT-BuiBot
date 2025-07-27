@@ -7,6 +7,10 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class Util {
@@ -109,5 +113,26 @@ public final class Util {
 
   public static @NotNull String genitive(final @NotNull String input) {
     return input + (input.endsWith("s") ? "'" : "'s");
+  }
+
+  public static @NotNull String date(@NotNull String day, @NotNull String month) {
+    if(day.length() == 1)
+      day = "0" + day;
+
+    if(month.length() == 1)
+      month = "0" + month;
+
+    val dm = day + "/" + month + "/";
+    val year = (Year.now().getValue());
+    val date = dm + year;
+
+    try {
+      return new Date(LocalDate.parse(date, DateTimeFormatter.ofPattern("dd/MM/yyyy")).toEpochDay())
+        .after(new Date()) ? date : dm + (year+1);
+    }
+
+    catch(final @NotNull Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }

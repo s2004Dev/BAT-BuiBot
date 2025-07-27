@@ -1,4 +1,4 @@
-package lonter.buibot.controller.commands;
+package lonter.buibot.controller.commands.functions;
 
 import static lonter.buibot.controller.commands.Util.rand;
 
@@ -25,7 +25,7 @@ public final class XPManager {
     if(currentTime.isBefore(lastMessageTime.plusSeconds(60)))
       return;
 
-    userMapper.updateXps(id, getXP(id)+rand(15, 25));
+    userMapper.update(id, "xps", getXP(id)+rand(15, 25));
     cooldownMap.put(id, currentTime);
   }
 
