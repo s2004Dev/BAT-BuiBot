@@ -47,19 +47,32 @@ public class BirthdayService {
   }
 
   private @NotNull Optional<ZoneId> findTimezoneForLocation(final @NotNull String locationName) {
-    val geoResponse = restTemplate.getForObject(UriComponentsBuilder
-      .fromUriString("https://nominatim.openstreetmap.org/search").queryParam("q", locationName)
-      .queryParam("format", "json").queryParam("limit", 1).toUriString(), JsonNode.class);
+    if(shared.coorsAPI == null) {
+      log.warn("findTimezoneForLocation(): coordsAPI is null.");
+      System.exit(-1);
+    }
 
-    if(geoResponse == null || geoResponse.isEmpty())
+    val cordsList = restTemplate.getForObject(UriComponentsBuilder.fromUriString(shared.coorsAPI)
+      .queryParam("q", locationName).queryParam("format", "json").queryParam("limit", 1).toUriString(),
+      JsonNode.class);
+
+    if(cordsList == null || cordsList.isEmpty())
       return Optional.empty();
 
-    val tzResponse = restTemplate.getForObject(UriComponentsBuilder.fromUriString("http://ip-api.com/json")
-      .queryParam("lat", geoResponse.get(0).get("lat").asText()).queryParam("lon", geoResponse.get(0).get("lon")
-        .asText()).queryParam("fields", "status,message,timezone").toUriString(), JsonNode.class);
+    if(shared.timezoneAPI == null) {
+      log.warn("findTimezoneForLocation(): timezoneAPI is null.");
+      System.exit(-1);
+    }
 
-    if(tzResponse != null && "success".equals(tzResponse.get("status").asText()) && tzResponse.has("timezone"))
-      return Optional.of(ZoneId.of(tzResponse.get("timezone").asText()));
+    val cords = cordsList.get(0);
+
+    val timezone = restTemplate.getForObject(UriComponentsBuilder.fromUriString(shared.timezoneAPI)
+      .queryParam("format", "json").queryParam("key", "OCEDTNLOHIOX").queryParam("by", "position")
+      .queryParam("fields", "zoneName").queryParam("lat", cords.get("lat").asText()).queryParam("lng",
+        cords.get("lon").asText()).toUriString(), JsonNode.class);
+
+    if(timezone != null && "OK".equals(timezone.get("status").asText()) && timezone.has("zoneName"))
+      return Optional.of(ZoneId.of(timezone.get("zoneName").asText()));
 
     return Optional.empty();
   }

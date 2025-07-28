@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.DateTimeException;
 import java.time.MonthDay;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +62,7 @@ public class General {
 
         MonthDay.of(month, day);
 
-        birthdayService.setBirthday(e.getAuthor().getIdLong(), day, month, args[2]);
+        birthdayService.setBirthday(e.getAuthor().getIdLong(), day, month, String.join("_", removeTo(args, 2)));
 
         return "Bui! Now I know your birthday!";
       }
@@ -81,8 +82,12 @@ public class General {
 
     val id = getUserId(args, e);
 
-    if(self(id, e))
-      return "Bui! My next birthday is " + date("09", "01") + " (Europe/Rome)! <:Star:1100387219975442502>";
+    if(self(id, e)) {
+      val tz = "Europe/Rome";
+
+      return "Bui! My next birthday is " + date("09", "01", ZoneId.of(tz)) + " (" + tz +
+        ")! <:Star:1100387219975442502>";
+    }
 
     if(id < 1)
       return sendMessageMention(id);
@@ -110,8 +115,8 @@ public class General {
     }
 
     return "Bui! " + genitive(member.getEffectiveName()) + " next birthday is " +
-      date(String.valueOf(birthday.getDayOfMonth()), String.valueOf(birthday.getMonth().getValue())) +
-      " (" + timezone + ")!";
+      date(String.valueOf(birthday.getDayOfMonth()), String.valueOf(birthday.getMonth().getValue()), timezone) +
+      " (" + timezone.toString().replace("_", " ") + ")!";
   }
 
   @Command @Help(description = "Bui will send the current latency.")

@@ -41,6 +41,12 @@ public final class SharedResources {
   @Value("${app.news:#{null}}")
   public Long news;
 
+  @Value("${app.coordsAPI:#{null}}")
+  public String coorsAPI;
+
+  @Value("${app.timezoneAPI:#{null}}")
+  public String timezoneAPI;
+
   @Value("${app.prefix}")
   public String prefix;
 }
