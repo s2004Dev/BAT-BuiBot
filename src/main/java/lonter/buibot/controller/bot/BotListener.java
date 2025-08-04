@@ -164,15 +164,15 @@ public final class BotListener extends ListenerAdapter {
 
     shared.mainGuild.addRoleToMember(member, unverified).queue();
 
-    if(shared.mainChannel == null) {
-      log.warn("onGuildMemberJoin(): mainChannel id is null.");
+    if(shared.staff == null) {
+      log.warn("onGuildMemberJoin(): staff id is null.");
       System.exit(-1);
     }
 
-    val channel = shared.mainGuild.getTextChannelById(shared.mainChannel);
+    val channel = shared.mainGuild.getTextChannelById(shared.staff);
 
     if(channel == null) {
-      log.warn("onGuildMemberJoin(): Main channel is null.");
+      log.warn("onGuildMemberJoin(): Staff channel is null.");
       return;
     }
 
