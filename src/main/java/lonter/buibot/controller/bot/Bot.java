@@ -18,13 +18,15 @@ import org.springframework.stereotype.Service;
 
 @Service @AllArgsConstructor
 public final class Bot {
-  private static final Logger log = LoggerFactory.getLogger(Bot.class);
+  private final Logger log = LoggerFactory.getLogger(this.getClass());
 
   private final BotListener botListener;
   private final SharedResources shared;
 
   @EventListener(ApplicationReadyEvent.class)
   private void start() {
+    shared.updateReactionRoles();
+
     if(shared.token == null) {
       log.warn("start(): token is null.");
       System.exit(-1);

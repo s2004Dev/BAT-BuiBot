@@ -1,15 +1,23 @@
 package lonter.buibot.controller.bot;
 
+import lonter.buibot.model.entities.ReactionRole;
+import lonter.buibot.model.mappers.ReactionRoleMapper;
+
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.sharding.ShardManager;
 
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 
 @Service
 public final class SharedResources {
   public ShardManager shardManager = null;
   public volatile Guild mainGuild = null;
+  public ArrayList<ReactionRole> reactionRoles = new ArrayList<>();
 
   @Value("${app.outputChannel:#{null}}")
   public Long outputChannel;
@@ -19,12 +27,6 @@ public final class SharedResources {
 
   @Value("${app.mainGuild:#{null}}")
   public Long mainGuildId;
-
-  @Value("${app.roleplayChannel:#{null}}")
-  public Long roleplayChannel;
-
-  @Value("${app.roleplayRole:#{null}}")
-  public Long roleplayRole;
 
   @Value("${app.kohai:#{null}}")
   public Long kohai;
@@ -49,4 +51,18 @@ public final class SharedResources {
 
   @Value("${app.prefix}")
   public String prefix;
+
+  @Value("${app.owner:#{null}}")
+  public Long owner;
+
+  private final ReactionRoleMapper rrMapper;
+
+  @Autowired
+  public SharedResources(final @NotNull ReactionRoleMapper rrMapper) {
+    this.rrMapper = rrMapper;
+  }
+
+  public void updateReactionRoles() {
+    reactionRoles = rrMapper.findAll();
+  }
 }

@@ -6,8 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.val;
 
 import lonter.bat.CommandHandler;
-
+import lonter.buibot.model.entities.ReactionRole;
 import lonter.buibot.model.mappers.UserMapper;
+
 import net.dv8tion.jda.api.entities.MessageType;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -26,7 +27,7 @@ import org.springframework.stereotype.Component;
 
 @Component @AllArgsConstructor
 public final class BotListener extends ListenerAdapter {
-  private static final Logger log = LoggerFactory.getLogger(BotListener.class);
+  private final Logger log = LoggerFactory.getLogger(this.getClass());
 
   private final CommandHandler handler;
   private final BeforeInvoke before;
@@ -93,44 +94,51 @@ public final class BotListener extends ListenerAdapter {
 
   @Override
   public void onMessageReactionAdd(final @NotNull MessageReactionAddEvent e) {
-    reactionLogic(e, true);
+    shared.reactionRoles.forEach(rr -> reactionLogic(e, true, rr));
   }
 
   @Override
   public void onMessageReactionRemove(final @NotNull MessageReactionRemoveEvent e) {
-    reactionLogic(e, false);
+    shared.reactionRoles.forEach(rr -> reactionLogic(e, false, rr));
   }
 
-  private void reactionLogic(final @NotNull GenericMessageReactionEvent e, final boolean add) {
-    if(shared.roleplayChannel == null) {
-      log.warn("reactionLogic() - {}: roleplay is null.", add);
-      System.exit(-1);
-    }
-
-    if(e.getMessageIdLong() != shared.roleplayChannel || !e.getEmoji().getName().equals("⭐"))
+  private void reactionLogic(final @NotNull GenericMessageReactionEvent e, final boolean add,
+                             final @NotNull ReactionRole rr) {
+    if(e.getMessageIdLong() != rr.messageId)
       return;
 
-    val member = e.getMember();
+    val emoji = e.getReaction().getEmoji();
 
-    if(shared.roleplayRole == null) {
-      log.warn("reactionLogic() - {}: roleplayRole id is null.", add);
-      System.exit(-1);
+    try {
+      if(!emoji.asCustom().getId().equals(rr.emojiId))
+        return;
     }
 
-    val roleplay = shared.mainGuild.getRoleById(shared.roleplayRole);
+    catch(final @NotNull Exception ex) {
+      if(!emoji.getName().equals(rr.emojiId))
+        return;
+    }
+
+    val member = e.getMember();
 
     if(member == null) {
       log.warn("reactionLogic() - {}: member is null.", add);
       return;
     }
 
-    val roles = member.getRoles().contains(roleplay);
+    val role = shared.mainGuild.getRoleById(rr.roleId);
+    val roles = member.getRoles().contains(role);
 
-    if(add == roles || roleplay == null)
+    if(add == roles)
       return;
 
-    (add ? shared.mainGuild.addRoleToMember(member, roleplay) :
-      shared.mainGuild.removeRoleFromMember(member, roleplay)).queue();
+    if(role == null) {
+      log.warn("reactionLogic() - {}: role {} is null.", add, rr.roleId);
+      return;
+    }
+
+    (add ? shared.mainGuild.addRoleToMember(member, role) :
+      shared.mainGuild.removeRoleFromMember(member, role)).queue();
   }
 
   @Override

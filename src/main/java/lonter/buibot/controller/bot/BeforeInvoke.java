@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Component @AllArgsConstructor
 public final class BeforeInvoke {
-  private static final Logger log = LoggerFactory.getLogger(BeforeInvoke.class);
+  private final Logger log = LoggerFactory.getLogger(this.getClass());
 
   private final SharedResources shared;
   private final XPManager xpManager;

@@ -38,6 +38,10 @@ public final class AfterInvoke {
     if(msgRaw.contains(":3"))
       colonThree(e);
 
+    val saxophone = msgRaw.replace(" ", "");
+    if(saxophone.contains("\uD83C\uDFB7\uD83D\uDC1B") || saxophone.contains("\uD83C\uDFB7\uD83E\uDDA6"))
+      saxophone(e);
+
     if(MonthDay.now(ZoneId.of("Europe/Rome")).equals(MonthDay.of(1, 9)) && (msgRaw.contains("hap") ||
        msgRaw.contains("birth")))
       birthday(msgRaw, e);
@@ -81,6 +85,10 @@ public final class AfterInvoke {
   private void colonThree(final @NotNull MessageReceivedEvent e) {
     if(rand(0, 30).equals(rand(0, 30)))
       send(":3", e);
+  }
+
+  private void saxophone(final @NotNull MessageReceivedEvent e) {
+    send("https://tenor.com/view/buizel-gif-23864494", e);
   }
 
   private static void emoji(@NotNull String input, final @NotNull MessageReceivedEvent e) {

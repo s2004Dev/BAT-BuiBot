@@ -24,7 +24,7 @@ import java.util.Optional;
 
 @Service @AllArgsConstructor
 public class BirthdayService {
-  private static final Logger log = LoggerFactory.getLogger(BirthdayService.class);
+  private final Logger log = LoggerFactory.getLogger(this.getClass());
 
   private final UserMapper userMapper;
   private final RestTemplate restTemplate;

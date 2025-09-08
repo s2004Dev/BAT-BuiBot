@@ -15,6 +15,8 @@ import lonter.buibot.controller.bot.SharedResources;
 import lonter.buibot.controller.commands.functions.BirthdayService;
 import lonter.buibot.controller.commands.functions.InvalidCityException;
 import lonter.buibot.controller.commands.functions.XPManager;
+import lonter.buibot.model.entities.ReactionRole;
+import lonter.buibot.model.mappers.ReactionRoleMapper;
 import lonter.buibot.model.mappers.UserMapper;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -33,12 +35,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @CommandClass @AllArgsConstructor
 public class General {
-  private static final Logger log = LoggerFactory.getLogger(General.class);
+  private final Logger log = LoggerFactory.getLogger(this.getClass());
 
   private final UserMapper userMapper;
   private final XPManager xpManager;
   private final BirthdayService birthdayService;
   private final SharedResources shared;
+  private final ReactionRoleMapper rrMapper;
 
   @Command @Help(description = "Bui will send the birth day of said user.", usage = "[id]")
   @Subcommand(name = "set", description = "Bui will ask you to set your birthday information.",
@@ -273,6 +276,73 @@ public class General {
       (xp-xpThisLvl) + "** / " + (xpNext-xpThisLvl) + " **XPs** - (" + (xpNext-xp) + " XPs left)\n\n" +
       ":green_square:".repeat(filled) + ":white_large_square:".repeat(empty) + " - (" + progress + "%)")
       .setFooter("Please do not spam!");
+  }
+
+  @Command
+  public @NotNull Object reaction(final @Args String @NotNull[] args, final @Event @NotNull MessageReceivedEvent e) {
+    if(shared.owner == null) {
+      log.warn("reaction(): owner is null.");
+      return "Owner is null.";
+    }
+
+    if(e.getAuthor().getIdLong() != shared.owner)
+      return "Bui! You don't have access to this command!";
+
+    val def = "Usage: `" + shared.prefix + "reaction <list/add/remove> [...args]`.";
+
+    if(args.length < 1)
+      return def;
+
+    return switch(args[0]) {
+      case "list" -> {
+        if(shared.reactionRoles.isEmpty())
+          yield "No active reaction roles.";
+
+        val embed = new EmbedBuilder();
+
+        embed.setTitle("Active reaction roles").setDescription("ID | NAME | MESSAGE | ROLE | EMOJI");
+
+        shared.reactionRoles.forEach(rr ->
+          embed.setDescription(rr.id + ") " + rr.name + ": " + rr.messageId + " | " + rr.roleId + " | " +
+            rr.emojiId + "\n"));
+
+        yield embed;
+      }
+
+      case "add" -> {
+        if(args.length < 5)
+          yield "Usage: `" + shared.prefix + "reaction add <message> <role> <emoji> <...name>`.";
+
+        try {
+          rrMapper.insert(new ReactionRole(String.join(" ", removeTo(args, 4)), Long.parseLong(args[1]),
+            Long.parseLong(args[2]), args[3]));
+
+          shared.updateReactionRoles();
+          yield "Reaction role added correctly.";
+        }
+
+        catch(final @NotNull Exception ex) {
+          yield "Something went wrong.";
+        }
+      }
+
+      case "remove" -> {
+        if(args.length < 2)
+          yield "Usage: `" + shared.prefix + "reaction remove <id>`.";
+
+        try {
+          rrMapper.deleteById(Long.parseLong(args[1]));
+          shared.updateReactionRoles();
+          yield "Reaction role removed correctly.";
+        }
+
+        catch(final @NotNull Exception ex) {
+          yield "Something went wrong.";
+        }
+      }
+
+      default -> def;
+    };
   }
 
   @Command @Help(description = "Bui will send the amount of times someone said bui things.", usage = "[id]")
