@@ -4,7 +4,6 @@ CREATE TABLE reaction_roles (
     id                      BIGINT              PRIMARY KEY,
     name                    VARCHAR             NOT NULL   ,
     message_id              BIGINT              NOT NULL   ,
-    channel_id              BIGINT              NOT NULL   ,
     role_id                 BIGINT              NOT NULL   ,
     emoji_id                VARCHAR             NOT NULL
 );
