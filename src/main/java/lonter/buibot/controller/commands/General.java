@@ -303,7 +303,7 @@ public class General {
         embed.setTitle("Active reaction roles").setDescription("ID | NAME | MESSAGE | ROLE | EMOJI");
 
         shared.reactionRoles.forEach(rr ->
-          embed.setDescription(rr.id + ") " + rr.name + ": " + rr.messageId + " | " + rr.roleId + " | " +
+          embed.appendDescription(rr.id + ") " + rr.name + ": " + rr.messageId + " | " + rr.roleId + " | " +
             rr.emojiId + "\n"));
 
         yield embed;
