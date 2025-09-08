@@ -322,6 +322,7 @@ public class General {
         }
 
         catch(final @NotNull Exception ex) {
+          ex.printStackTrace();
           yield "Something went wrong.";
         }
       }
