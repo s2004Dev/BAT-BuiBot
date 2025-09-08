@@ -300,7 +300,7 @@ public class General {
 
         val embed = new EmbedBuilder();
 
-        embed.setTitle("Active reaction roles").setDescription("ID | NAME | MESSAGE | ROLE | EMOJI");
+        embed.setTitle("Active reaction roles").setDescription("ID | NAME | MESSAGE | ROLE | EMOJI\n\n");
 
         shared.reactionRoles.forEach(rr ->
           embed.appendDescription(rr.id + ") " + rr.name + ": " + rr.messageId + " | " + rr.roleId + " | " +
