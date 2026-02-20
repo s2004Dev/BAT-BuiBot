@@ -68,18 +68,13 @@ public final class Util {
 
   @SuppressWarnings("unchecked")
   public static <T extends Number> @NotNull T rand(final @NotNull T min, final @NotNull T max) {
+    val current = ThreadLocalRandom.current();
+
     return switch(min) {
-      case Integer _ when max instanceof Integer ->
-        (T) Integer.valueOf(ThreadLocalRandom.current().nextInt(min.intValue(), max.intValue()+1));
-
-      case Double _ when max instanceof Double ->
-        (T) Double.valueOf(ThreadLocalRandom.current().nextDouble(min.doubleValue(), max.doubleValue()));
-
-      case Float _ when max instanceof Float ->
-        (T) Float.valueOf(ThreadLocalRandom.current().nextFloat(min.floatValue(), max.floatValue()));
-
-      case Long _ when max instanceof Long ->
-        (T) Long.valueOf(ThreadLocalRandom.current().nextLong(min.longValue(), max.longValue()+1));
+      case Double _ -> (T) Double.valueOf(current.nextDouble(min.doubleValue(), max.doubleValue()));
+      case Float _ -> (T) Float.valueOf(current.nextFloat(min.floatValue(), max.floatValue()));
+      case Integer _ -> (T) Integer.valueOf(current.nextInt(min.intValue(), max.intValue()+1));
+      case Long _ -> (T) Long.valueOf(current.nextLong(min.longValue(), max.longValue()+1));
 
       default -> throw new IllegalArgumentException("Unsupported type: " + min.getClass());
     };
