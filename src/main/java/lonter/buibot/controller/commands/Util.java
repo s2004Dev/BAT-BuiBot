@@ -71,17 +71,10 @@ public final class Util {
     val current = ThreadLocalRandom.current();
 
     return switch(min) {
-      case Integer _ when max instanceof Integer ->
-        (T) Integer.valueOf(current.nextInt(min.intValue(), max.intValue()+1));
-
-      case Double _ when max instanceof Double ->
-        (T) Double.valueOf(current.nextDouble(min.doubleValue(), max.doubleValue()));
-
-      case Float _ when max instanceof Float ->
-        (T) Float.valueOf(current.nextFloat(min.floatValue(), max.floatValue()));
-
-      case Long _ when max instanceof Long ->
-        (T) Long.valueOf(current.nextLong(min.longValue(), max.longValue()+1));
+      case Double a when max instanceof Double b -> (T) Double.valueOf(current.nextDouble(a, b));
+      case Float a when max instanceof Float b -> (T) Float.valueOf(current.nextFloat(a, b));
+      case Integer a when max instanceof Integer b -> (T) Integer.valueOf(current.nextInt(a, b+1));
+      case Long a when max instanceof Long b -> (T) Long.valueOf(current.nextLong(a, b+1));
 
       default -> throw new IllegalArgumentException("Unsupported type: " + min.getClass());
     };
