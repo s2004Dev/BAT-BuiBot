@@ -11,6 +11,8 @@ import lonter.bat.annotations.help.Help;
 import lonter.bat.annotations.help.Subcommand;
 import lonter.bat.annotations.parameters.ats.Args;
 import lonter.bat.annotations.parameters.ats.Event;
+import lonter.bat.batobjs.BatEmbed;
+import lonter.bat.batobjs.BatMessageReceivedEvent;
 import lonter.buibot.controller.bot.SharedResources;
 import lonter.buibot.controller.commands.functions.BirthdayService;
 import lonter.buibot.controller.commands.functions.InvalidCityException;
@@ -18,9 +20,6 @@ import lonter.buibot.controller.commands.functions.XPManager;
 import lonter.buibot.model.entities.ReactionRole;
 import lonter.buibot.model.mappers.ReactionRoleMapper;
 import lonter.buibot.model.mappers.UserMapper;
-
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -47,7 +46,10 @@ public class General {
   @Subcommand(name = "set", description = "Bui will ask you to set your birthday information.",
     usage = "<dd/MM timezone>")
   public @NotNull String birthday(final @Args String @NotNull[] args,
-                                  final @Event @NotNull MessageReceivedEvent e) {
+                                  final @Event @NotNull BatMessageReceivedEvent e) {
+    if(e.server == null)
+      return "Bui! This command works only in a server!";
+
     if(args.length > 0 && args[0].equals("set")) {
       val wrongFormat = "Bui! Wrong format! `" + shared.prefix + "birthday set dd/MM timezone`.";
 
@@ -65,7 +67,7 @@ public class General {
 
         MonthDay.of(month, day);
 
-        birthdayService.setBirthday(e.getAuthor().getIdLong(), day, month, String.join("_", removeTo(args, 2)));
+        birthdayService.setBirthday(e.author.id, day, month, String.join("_", removeTo(args, 2)));
 
         return "Bui! Now I know your birthday!";
       }
@@ -101,7 +103,7 @@ public class General {
     if(found.isEmpty())
       return idk;
 
-    val member = e.getGuild().getMemberById(id);
+    val member = e.server.getMemberById(id);
 
     if(member == null) {
       log.warn("birthday(): No member found with id {}.", id);
@@ -117,14 +119,14 @@ public class General {
       return idk;
     }
 
-    return "Bui! " + genitive(member.getEffectiveName()) + " next birthday is " +
+    return "Bui! " + genitive(member.localName) + " next birthday is " +
       date(String.valueOf(birthday.getDayOfMonth()), String.valueOf(birthday.getMonth().getValue()), timezone) +
       " (" + timezone.toString().replace("_", " ") + ")!";
   }
 
   @Command @Help(description = "Bui will send the current latency.")
-  public @NotNull String ping(final @Event @NotNull MessageReceivedEvent e) {
-    return "Bui! My ping is: **" + e.getJDA().getGatewayPing() + "ms**.";
+  public @NotNull String ping(final @Event @NotNull BatMessageReceivedEvent e) {
+    return "Bui! My ping is: **" + e.bat.getPing() + "ms**.";
   }
 
   @Command(aliases = "lb") @Help(description = "Bui will send the list of all the bui things sent.", usage = "<args>")
@@ -132,7 +134,10 @@ public class General {
   @Subcommand(name = "buizel", description = "Bui will send the list of the people who said buizel the most.")
   @Subcommand(name = "levels", description = "Bui will send the list of the people who talked the most.")
   public @NotNull Object leaderboard(final @Args String @NotNull[] args,
-                                     final @Event @NotNull MessageReceivedEvent e) {
+                                     final @Event @NotNull BatMessageReceivedEvent e) {
+    if(e.server == null)
+      return "Bui! This command works only in a server!";
+
     if(args.length < 1)
       return "Bui... you have to specify what do you want me to show the list of!";
 
@@ -141,13 +146,13 @@ public class General {
     if(!List.of("bui", "buizel", "levels").contains(type))
       return "Bui! I don't get the input...";
 
-    val embed = new EmbedBuilder();
+    val embed = new BatEmbed();
 
-    embed.setTitle("Bui! Here are the people who " + (type.equals("levels") ? "talk" : "said" + type) +
-      " the most!");
+    embed.title = "Bui! Here are the people who " + (type.equals("levels") ? "talk" : "said" + type) +
+      " the most!";
 
     val text = new StringBuilder();
-    val idCaller = e.getAuthor().getIdLong();
+    val idCaller = e.author.id;
     val notInTop = new AtomicBoolean(true);
     val users = userMapper.findAllForRank(type.equals("levels") ? "xps" : type);
     val i = new AtomicInteger();
@@ -165,14 +170,14 @@ public class General {
       if(idCaller == user.id)
         notInTop.set(false);
 
-      val member = e.getGuild().getMemberById(user.id);
+      val member = e.server.getMemberById(user.id);
 
       if(member == null) {
         log.warn("leaderboard(): member {} was found null.", user.id);
         return;
       }
 
-      line.append("**").append(i.incrementAndGet()).append(") ").append(member.getEffectiveName()).append(":** ")
+      line.append("**").append(i.incrementAndGet()).append(") ").append(member.localName).append(":** ")
         .append(num).append("\n");
 
       text.append(line);
@@ -197,46 +202,93 @@ public class General {
       }).append(" place.**");
     }
 
-    return embed.setDescription(text.toString()).setFooter("Bui, remember to say bui!");
+    embed.description = text.toString();
+    embed.footer = "Bui, remember to say bui!";
+
+    return embed;
   }
 
   @Command(value = "profilepicture", aliases = "pfp")
   @Help(description = "Bui will send someone's profile picture.", usage = "[id] | [args] [id]")
   @Subcommand(name = "local", description = "Bui will send someone's local profile picture", usage = "[id]")
   public @NotNull Object profilePicture(final @Args String @NotNull[] args,
-                                        final @Event @NotNull MessageReceivedEvent e) {
-    val embed = new EmbedBuilder();
+                                        final @Event @NotNull BatMessageReceivedEvent e) {
+    if(e.server == null)
+      return "Bui! This command works only in a server!";
+
+    val embed = new BatEmbed();
     val id = getUserId(args.length > 0 && args[0].equals("local") ? removeFirst(args) : args, e);
 
-    var member = e.getMember();
+    var member = e.author;
+
+    if(id < 1) {
+      if(!args[0].equals("local"))
+        return sendMessageMention(id);
+
+      if(!member.hasLocalPfp())
+        return "Bui! You don't have a local profile picture!";
+
+      embed.title = "Bui! Here is your current local profile picture!";
+      embed.imageUrl = member.localPfpUrl + "?size=2048";
+
+      return embed;
+    }
+
+    if(id == e.author.id) {
+      if(args.length > 0 && args[0].equals("local")) {
+        if(!member.hasLocalPfp())
+          return "Bui! You don't have a local profile picture!";
+
+        embed.title = "Bui! Here is your current local profile picture!";
+        embed.imageUrl = member.localPfpUrl + "?size=2048";
+
+        return embed;
+      }
+
+      embed.title = "Bui! Here is your current profile picture!";
+
+      val user = e.bat.getUserById(id);
+
+      if(user == null)
+        return "Bui! An error has occurred!";
+
+      embed.imageUrl = "https://cdn.discordapp.com/avatars/" + id + "/" + user.globalPfpUrl + ".png?size=2048";
+
+      return embed;
+    }
+
+    member = e.server.getMemberById(id);
 
     if(member == null)
       return "Bui... an error has occurred...";
 
-    if(id < 1)
-      return args[0].equals("local") ? member.getAvatarId() == null ? "Bui! You don't have a local profile picture!" :
-        embed.setTitle("Bui! Here is your current local profile picture!").setImage(member.getAvatarUrl() +
-          "?size=2048") : sendMessageMention(id);
+    if(args[0].equals("local")) {
+      if(!member.hasLocalPfp())
+        return "Bui! " + member.localName + " doesn't have a local profile picture!";
 
-    if(id == e.getAuthor().getIdLong())
-      return args.length > 0 && args[0].equals("local") ? member.getAvatarId() == null ? "Bui! You don't have a " +
-        "local profile picture!" : embed.setTitle("Bui! Here is your current local profile picture!")
-        .setImage(member.getAvatarUrl() + "?size=2048") : embed.setTitle("Bui! Here is your current profile picture!")
-        .setImage("https://cdn.discordapp.com/avatars/" + id + "/" + e.getJDA().retrieveUserById(id).complete()
-          .getAvatarId() + ".png?size=2048");
+      embed.title = "Bui! Here is " + genitive(member.localName) + " local profile picture!";
+      embed.imageUrl = member.localPfpUrl + "?size=2048";
 
-    member = e.getGuild().getMemberById(id);
+      return embed;
+    }
 
-    return member == null ? "Bui... an error has occurred..." : args[0].equals("local") ?
-      member.getAvatarId() == null ? "Bui! " + member.getEffectiveName() + " doesn't have a local profile picture!" :
-        embed.setTitle("Bui! Here is " + genitive(member.getEffectiveName()) + " local profile picture!")
-          .setImage(member.getAvatarUrl() + "?size=2048") : embed.setTitle("Bui! Here is " +
-      genitive(member.getEffectiveName()) + " profile picture!").setImage("https://cdn.discordapp.com/avatars/" + id + "/" +
-      e.getJDA().retrieveUserById(id).complete().getAvatarId() + ".png?size=2048");
+    embed.title = "Bui! Here is " + genitive(member.localName) + " profile picture!";
+
+    val user = e.bat.getUserById(id);
+
+    if(user == null)
+      return "Bui! An error has occurred!";
+
+    embed.imageUrl = "https://cdn.discordapp.com/avatars/" + id + "/" + user.globalPfpUrl + ".png?size=2048";
+
+    return embed;
   }
 
   @Command @Help(description = "Bui will send someone's rank card in the server (by messages).", usage = "[id]")
-  public @NotNull Object rank(final @Args String @NotNull[] args, final @Event @NotNull MessageReceivedEvent e) {
+  public @NotNull Object rank(final @Args String @NotNull[] args, final @Event @NotNull BatMessageReceivedEvent e) {
+    if(e.server == null)
+      return "Bui! This command works only in a server!";
+
     val id = getUserId(args, e);
 
     if(self(id, e))
@@ -268,24 +320,35 @@ public class General {
       empty = 0;
     }
 
-    val user = e.getJDA().getUserById(id);
+    val user = e.bat.getUserById(id);
 
-    return user == null ? "Bui! I don't know this user..." : new EmbedBuilder().setTitle(e.getAuthor()
-        .getIdLong() == id ? "Bui! Here your rank card!" : "Bui! Here is " + genitive(user.getEffectiveName()) +
-        "'s rank card!").setThumbnail(user.getAvatarUrl()).setDescription("**Lvl:** " + lvl + " | **" +
-      (xp-xpThisLvl) + "** / " + (xpNext-xpThisLvl) + " **XPs** - (" + (xpNext-xp) + " XPs left)\n\n" +
-      ":green_square:".repeat(filled) + ":white_large_square:".repeat(empty) + " - (" + progress + "%)")
-      .setFooter("Please do not spam!");
+    if(user == null)
+      return "Bui! I don't know this user...";
+
+    val embed = new BatEmbed();
+
+    embed.title = e.author.id == id ? "Bui! Here your rank card!" : "Bui! Here is " + genitive(user.localName) +
+      " rank card!";
+
+    embed.thumbnailUrl = user.localPfpUrl;
+
+    embed.description = "**Lvl:** " + lvl + " | **" + (xp-xpThisLvl) + "** / " + (xpNext-xpThisLvl) +
+      " **XPs** - (" + (xpNext-xp) + " XPs left)\n\n" + ":green_square:".repeat(filled) +
+      ":white_large_square:".repeat(empty) + " - (" + progress + "%)";
+
+    embed.footer = "Please do not spam!";
+
+    return embed;
   }
 
   @Command
-  public @NotNull Object reaction(final @Args String @NotNull[] args, final @Event @NotNull MessageReceivedEvent e) {
+  public @NotNull Object reaction(final @Args String @NotNull[] args, final @Event @NotNull BatMessageReceivedEvent e) {
     if(shared.owner == null) {
       log.warn("reaction(): owner is null.");
       return "Owner is null.";
     }
 
-    if(e.getAuthor().getIdLong() != shared.owner)
+    if(e.author.id != shared.owner)
       return "Bui! You don't have access to this command!";
 
     val def = "Usage: `" + shared.prefix + "reaction <list/add/remove> [...args]`.";
@@ -298,13 +361,17 @@ public class General {
         if(shared.reactionRoles.isEmpty())
           yield "No active reaction roles.";
 
-        val embed = new EmbedBuilder();
+        val embed = new BatEmbed();
 
-        embed.setTitle("Active reaction roles").setDescription("ID | NAME | MESSAGE | ROLE | EMOJI\n\n");
+        embed.title = "Active reaction roles";
+
+        val desc = new StringBuilder("ID | NAME | MESSAGE | ROLE | EMOJI\n\n");
 
         shared.reactionRoles.forEach(rr ->
-          embed.appendDescription(rr.id + ") " + rr.name + ": " + rr.messageId + " | " + rr.roleId + " | " +
-            rr.emojiId + "\n"));
+          desc.append(rr.id).append(") ").append(rr.name).append(": ").append(rr.messageId).append(" | ")
+            .append(rr.roleId).append(" | ").append(rr.emojiId).append("\n"));
+
+        embed.description = desc.toString();
 
         yield embed;
       }
@@ -347,7 +414,7 @@ public class General {
   }
 
   @Command @Help(description = "Bui will send the amount of times someone said bui things.", usage = "[id]")
-  public @NotNull Object stats(final @Args String @NotNull[] args, final @Event @NotNull MessageReceivedEvent e) {
+  public @NotNull Object stats(final @Args String @NotNull[] args, final @Event @NotNull BatMessageReceivedEvent e) {
     val id = getUserId(args, e);
 
     if(id < 1)
@@ -356,24 +423,31 @@ public class General {
     if(self(id, e))
       return "Bui! I am unrankable! <:Chad:1045753361737199656>";
 
-    val member = e.getJDA().getUserById(id);
+    val member = e.bat.getUserById(id);
 
     if(member == null)
       return "Bui! Something went wrong...";
 
     val user = userMapper.findById(id).orElseGet(( ) -> userMapper.insert(id));
-    val embed = new EmbedBuilder();
+    val embed = new BatEmbed();
 
-    if(id == e.getAuthor().getIdLong())
-      embed.setTitle("Here are your stats:").setDescription("You said \"Bui\" " + user.getBui() + " time" +
-        plural(user.getBui()) + ".\nYou also said \"Buizel\" " + user.getBuizel() + " time" +
-        plural(user.getBuizel()) + ".");
+    if(id == e.author.id) {
+      embed.title = "Here are your stats:";
 
-    else
-      embed.setTitle("Here are " + genitive(member.getEffectiveName()) + " stats:").setDescription("They said " +
-        "\"Bui\" " + user.getBui() + " time" + plural(user.getBui()) + ".\nThey also said \"Buizel\" " +
-        user.getBuizel() + " time" + plural(user.getBuizel()) + ".");
+      embed.description = "You said \"Bui\" " + user.getBui() + " time" + plural(user.getBui()) +
+        ".\nYou also said \"Buizel\" " + user.getBuizel() + " time" + plural(user.getBuizel()) + ".";
+    }
 
-    return embed.setFooter("Bui! Great job!").setThumbnail(member.getAvatarUrl());
+    else {
+      embed.title = "Here are " + genitive(member.localName) + " stats:";
+
+      embed.description = "They said " + "\"Bui\" " + user.getBui() + " time" + plural(user.getBui()) +
+        ".\nThey also said \"Buizel\" " + user.getBuizel() + " time" + plural(user.getBuizel()) + ".";
+    }
+
+    embed.footer = "Bui! Great job!";
+    embed.thumbnailUrl = member.localPfpUrl;
+
+    return embed;
   }
 }

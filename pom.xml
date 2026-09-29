@@ -6,19 +6,20 @@
   <parent>
     <groupId> org.springframework.boot </groupId>
     <artifactId> spring-boot-starter-parent </artifactId>
-    <version> 4.0.2 </version>
+    <version> 4.1.1 </version>
     <relativePath/>
   </parent>
 
   <groupId> lonter </groupId>
   <artifactId> buibot </artifactId>
-  <version> 0.0.1 </version>
+  <version> 0.2 </version>
   <name> BuiBot </name>
   <description> BuiBot </description>
 
   <properties>
-    <java.version> 23 </java.version>
+    <java.version> 25 </java.version>
     <start-class> lonter.buibot.BuiBot </start-class>
+    <mybatis.version> 4.1.0 </mybatis.version>
   </properties>
 
   <dependencies>
@@ -30,20 +31,21 @@
     <dependency>
       <groupId> org.projectlombok </groupId>
       <artifactId> lombok </artifactId>
+      <version> 1.18.48 </version>
+      <scope> provided </scope>
     </dependency>
 
     <dependency>
       <groupId> org.jetbrains </groupId>
       <artifactId> annotations </artifactId>
-      <version> 24.0.0 </version>
+      <version> 26.1.0 </version>
       <scope> compile </scope>
     </dependency>
 
-    <!--suppress VulnerableLibrariesLocal -->
     <dependency>
       <groupId> net.dv8tion </groupId>
       <artifactId> JDA </artifactId>
-      <version> 5.2.1 </version>
+      <version> 6.7.0 </version>
     </dependency>
 
     <dependency>
@@ -55,13 +57,13 @@
     <dependency>
       <groupId> org.mybatis.spring.boot </groupId>
       <artifactId> mybatis-spring-boot-starter </artifactId>
-      <version> 4.0.1 </version>
+      <version> ${mybatis.version} </version>
     </dependency>
 
     <dependency>
       <groupId> org.mybatis.spring.boot </groupId>
       <artifactId> mybatis-spring-boot-starter-test </artifactId>
-      <version> 4.0.1 </version>
+      <version> ${mybatis.version} </version>
       <scope> test </scope>
     </dependency>
 
@@ -98,15 +100,9 @@
             </path>
           </annotationProcessorPaths>
 
-          <source> 23 </source>
-          <target> 23 </target>
-          <compilerArgs> --enable-preview </compilerArgs>
+          <source> ${java.version} </source>
+          <target> ${java.version} </target>
         </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId> org.graalvm.buildtools </groupId>
-        <artifactId> native-maven-plugin </artifactId>
       </plugin>
 
       <plugin>

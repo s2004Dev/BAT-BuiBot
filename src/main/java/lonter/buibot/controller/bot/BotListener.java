@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.val;
 
 import lonter.bat.CommandHandler;
+import lonter.bat.wrappers.discord.DiscordMRE;
 import lonter.buibot.model.entities.ReactionRole;
 import lonter.buibot.model.mappers.UserMapper;
 
@@ -27,7 +28,7 @@ import org.springframework.stereotype.Component;
 
 @Component @AllArgsConstructor
 public final class BotListener extends ListenerAdapter {
-  private final Logger log = LoggerFactory.getLogger(this.getClass());
+  private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final CommandHandler handler;
   private final BeforeInvoke before;
@@ -35,8 +36,7 @@ public final class BotListener extends ListenerAdapter {
   private final SharedResources shared;
   private final UserMapper userMapper;
 
-  @Override
-  public void onMessageReceived(final @NotNull MessageReceivedEvent e) {
+  @Override public void onMessageReceived(final @NotNull MessageReceivedEvent e) {
     val message = e.getMessage();
 
     if(message.getType() == MessageType.CHANNEL_PINNED_ADD) {
@@ -56,7 +56,7 @@ public final class BotListener extends ListenerAdapter {
 
     try {
       before.logic(e);
-      handler.invoke(e);
+      handler.invoke(new DiscordMRE(e));
       after.logic(e);
     }
 
@@ -76,8 +76,7 @@ public final class BotListener extends ListenerAdapter {
     }
   }
 
-  @Override
-  public void onGuildReady(final @NotNull GuildReadyEvent e) {
+  @Override public void onGuildReady(final @NotNull GuildReadyEvent e) {
     if(shared.mainGuildId == null) {
       log.warn("onGuildReady(): mainGuildId is null.");
       System.exit(-1);
@@ -92,13 +91,11 @@ public final class BotListener extends ListenerAdapter {
     System.exit(-1);
   }
 
-  @Override
-  public void onMessageReactionAdd(final @NotNull MessageReactionAddEvent e) {
+  @Override public void onMessageReactionAdd(final @NotNull MessageReactionAddEvent e) {
     shared.reactionRoles.forEach(rr -> reactionLogic(e, true, rr));
   }
 
-  @Override
-  public void onMessageReactionRemove(final @NotNull MessageReactionRemoveEvent e) {
+  @Override public void onMessageReactionRemove(final @NotNull MessageReactionRemoveEvent e) {
     shared.reactionRoles.forEach(rr -> reactionLogic(e, false, rr));
   }
 
@@ -141,8 +138,7 @@ public final class BotListener extends ListenerAdapter {
       shared.mainGuild.removeRoleFromMember(member, role)).queue();
   }
 
-  @Override
-  public void onGuildMemberJoin(final @NotNull GuildMemberJoinEvent e) {
+  @Override public void onGuildMemberJoin(final @NotNull GuildMemberJoinEvent e) {
     if(e.getUser().isBot())
       return;
 
@@ -187,8 +183,7 @@ public final class BotListener extends ListenerAdapter {
     channel.sendMessage(member.getAsMention() + " joined.").queue();
   }
 
-  @Override
-  public void onGuildMemberRemove(@NotNull GuildMemberRemoveEvent e) {
+  @Override public void onGuildMemberRemove(@NotNull GuildMemberRemoveEvent e) {
     if(e.getUser().isBot())
       return;
 
@@ -246,8 +241,7 @@ public final class BotListener extends ListenerAdapter {
     general.sendMessage(member.getAsMention() + "(" + member.getEffectiveName() + ") left the valley...").queue();
   }
 
-  @Override
-  public void onGuildMemberRoleAdd(@NotNull GuildMemberRoleAddEvent e) {
+  @Override public void onGuildMemberRoleAdd(@NotNull GuildMemberRoleAddEvent e) {
     val member = e.getMember();
     val roles = e.getRoles();
 

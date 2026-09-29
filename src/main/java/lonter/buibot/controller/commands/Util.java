@@ -2,6 +2,8 @@ package lonter.buibot.controller.commands;
 
 import lombok.val;
 
+import lonter.bat.batobjs.BatMessageReceivedEvent;
+
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import org.jetbrains.annotations.NotNull;
@@ -16,16 +18,16 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class Util {
   public static @NotNull String sendMessageMention(final long id) {
-    return switch (id) {
-      case 0L -> "Bui! Wrong tag!";
-      case -1L -> "Bui! I don't get the input!";
+    return switch ((int) id) {
+      case 0 -> "Bui! Wrong tag!";
+      case -1 -> "Bui! I don't get the input!";
       default -> "Bui! Something went wrong...";
     };
   }
 
-  public static long getUserId(final String @NotNull[] args, final @NotNull MessageReceivedEvent e) {
+  public static long getUserId(final String @NotNull[] args, final @NotNull BatMessageReceivedEvent e) {
     if(args.length == 0)
-      return e.getAuthor().getIdLong();
+      return e.author.id;
 
     val input = args[0];
 
@@ -38,10 +40,10 @@ public final class Util {
         return -2;
 
       try {
-        val user = e.getJDA().getUserByTag(input);
+        val user = e.bat.getUserByTag(input);
 
         return user == null ? countOccurrences(input, "#") == 1 && input.split("#")[1].matches("-?\\d+") ? 0 : -1 :
-          user.getIdLong();
+          user.id;
       }
 
       catch(final @NotNull Exception ignored) {
@@ -50,8 +52,8 @@ public final class Util {
     }
   }
 
-  public static boolean self(final long id, final @NotNull MessageReceivedEvent e) {
-    return id == e.getJDA().getSelfUser().getIdLong();
+  public static boolean self(final long id, final @NotNull BatMessageReceivedEvent e) {
+    return id == e.self.id;
   }
 
   public static int countOccurrences(final @NotNull String haystack, final @NotNull String needle) {
@@ -97,7 +99,7 @@ public final class Util {
   }
 
   public static int map(final int x, final int inMin, final int inMax, final int outMin,
-                          final int outMax) {
+                        final int outMax) {
     return (x-inMin)*(outMax-outMin)/(inMax-inMin)+outMin;
   }
 
