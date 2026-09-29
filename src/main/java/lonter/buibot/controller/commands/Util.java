@@ -18,11 +18,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class Util {
   public static @NotNull String sendMessageMention(final long id) {
-    return switch ((int) id) {
-      case 0 -> "Bui! Wrong tag!";
-      case -1 -> "Bui! I don't get the input!";
-      default -> "Bui! Something went wrong...";
-    };
+    return id == 0L ? "Bui! Wrong tag!" : id == -1L ? "Bui! I don't get the input!" :
+      "Bui! Something went wrong...";
   }
 
   public static long getUserId(final String @NotNull[] args, final @NotNull BatMessageReceivedEvent e) {

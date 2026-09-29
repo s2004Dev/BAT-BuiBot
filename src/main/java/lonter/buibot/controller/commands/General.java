@@ -219,20 +219,10 @@ public class General {
     val embed = new BatEmbed();
     val id = getUserId(args.length > 0 && args[0].equals("local") ? removeFirst(args) : args, e);
 
+    if(id < 1)
+      return sendMessageMention(id);
+
     var member = e.author;
-
-    if(id < 1) {
-      if(!args[0].equals("local"))
-        return sendMessageMention(id);
-
-      if(!member.hasLocalPfp())
-        return "Bui! You don't have a local profile picture!";
-
-      embed.title = "Bui! Here is your current local profile picture!";
-      embed.imageUrl = member.localPfpUrl + "?size=2048";
-
-      return embed;
-    }
 
     if(id == e.author.id) {
       if(args.length > 0 && args[0].equals("local")) {
@@ -246,13 +236,7 @@ public class General {
       }
 
       embed.title = "Bui! Here is your current profile picture!";
-
-      val user = e.bat.getUserById(id);
-
-      if(user == null)
-        return "Bui! An error has occurred!";
-
-      embed.imageUrl = "https://cdn.discordapp.com/avatars/" + id + "/" + user.globalPfpUrl + ".png?size=2048";
+      embed.imageUrl = member.globalPfpUrl + "?size=2048";
 
       return embed;
     }
@@ -262,7 +246,7 @@ public class General {
     if(member == null)
       return "Bui... an error has occurred...";
 
-    if(args[0].equals("local")) {
+    if(args.length > 0 && args[0].equals("local")) {
       if(!member.hasLocalPfp())
         return "Bui! " + member.localName + " doesn't have a local profile picture!";
 
@@ -273,13 +257,7 @@ public class General {
     }
 
     embed.title = "Bui! Here is " + genitive(member.localName) + " profile picture!";
-
-    val user = e.bat.getUserById(id);
-
-    if(user == null)
-      return "Bui! An error has occurred!";
-
-    embed.imageUrl = "https://cdn.discordapp.com/avatars/" + id + "/" + user.globalPfpUrl + ".png?size=2048";
+    embed.imageUrl = member.globalPfpUrl + "?size=2048";
 
     return embed;
   }
