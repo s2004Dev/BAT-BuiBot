@@ -1,25 +1,15 @@
 package lonter.buibot.controller.bot;
 
-import static lonter.buibot.controller.commands.Util.send;
-
 import lombok.AllArgsConstructor;
 import lombok.val;
 
 import lonter.bat.CommandHandler;
-import lonter.bat.wrappers.discord.DiscordMRE;
+import lonter.bat.batobjs.BatGGE;
+import lonter.bat.batobjs.BatGRE;
+import lonter.bat.batobjs.BatMRE;
+import lonter.bat.batobjs.BatRCE;
 import lonter.buibot.model.entities.ReactionRole;
 import lonter.buibot.model.mappers.UserMapper;
-
-import net.dv8tion.jda.api.entities.MessageType;
-import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.events.message.react.GenericMessageReactionEvent;
-import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
-import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -27,248 +17,174 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component @AllArgsConstructor
-public final class BotListener extends ListenerAdapter {
+public final class BotListener {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  private final CommandHandler handler;
-  private final BeforeInvoke before;
-  private final AfterInvoke after;
   private final SharedResources shared;
   private final UserMapper userMapper;
 
-  @Override public void onMessageReceived(final @NotNull MessageReceivedEvent e) {
-    val message = e.getMessage();
+  private final BeforeInvoke before;
+  private final CommandHandler handler;
+  private final AfterInvoke after;
 
-    if(message.getType() == MessageType.CHANNEL_PINNED_ADD) {
-      message.delete().queue();
+  public void onMessageReceived(final @NotNull BatMRE e) {
+    val message = e.message;
+
+    if(message.isSystemPinned()) {
+      message.delete();
       return;
     }
 
-    val author = e.getAuthor();
+    val author = e.author;
 
     if(author.isBot())
       return;
 
-    if(!e.isFromGuild()) {
-      send("Bui! You cannot interact with me outside of the server!", e);
-      return;
-    }
-
     try {
       before.logic(e);
-      handler.invoke(new DiscordMRE(e));
+      handler.invoke(e);
       after.logic(e);
     }
 
     catch(final @NotNull Exception ex) {
-      ex.printStackTrace();
+      log.error("BatMRE {} threw an exception: ", e.source, ex);
 
-      log.warn("onMessageReceived(): author: {}", author.getName());
-      log.warn("onMessageReceived(): message: {}", message.getContentRaw());
+      log.warn("onMessageReceived(): author: {}", author.globalName);
+      log.warn("onMessageReceived(): message: {}", message.text);
 
-      if(!e.isFromGuild())
+      if(e.server == null)
         return;
 
-      val channel = e.getChannel();
+      val channel = e.channel;
 
-      log.warn("onMessageReceived(): channel: {}; id: {}", channel.getName(), channel.getId());
-      log.warn("onMessageReceived(): guild: {}", e.getGuild().getName());
+      log.warn("onMessageReceived(): channel: {}; id: {}", channel.name, channel.id);
+      log.warn("onMessageReceived(): guild: {}", e.server.name);
     }
   }
 
-  @Override public void onGuildReady(final @NotNull GuildReadyEvent e) {
-    if(shared.mainGuildId == null) {
-      log.warn("onGuildReady(): mainGuildId is null.");
+  public void onGuildReady(final String source) {
+    val guild = shared.getShard(source).getServerById(Long.parseLong(shared.getValue(source, "mainGuild")));
+
+    if(guild == null) {
+      log.warn("onGuildReady(): {} main guild is null.", source);
       System.exit(-1);
     }
 
-    shared.mainGuild = shared.shardManager.getGuildById(shared.mainGuildId);
+    shared.setServer(source, guild);
+  }
 
-    if(shared.mainGuild != null)
+  public void reactionLogic(final @NotNull BatGRE e, final @NotNull ReactionRole rr) {
+    if(e.messageId != rr.messageId || !e.emojiId.equals(rr.emojiId))
       return;
 
-    log.warn("onGuildReady(): main guild is null.");
-    System.exit(-1);
-  }
+    val source = e.source;
+    val role = shared.getServer(source).getRoleById(rr.roleId);
 
-  @Override public void onMessageReactionAdd(final @NotNull MessageReactionAddEvent e) {
-    shared.reactionRoles.forEach(rr -> reactionLogic(e, true, rr));
-  }
-
-  @Override public void onMessageReactionRemove(final @NotNull MessageReactionRemoveEvent e) {
-    shared.reactionRoles.forEach(rr -> reactionLogic(e, false, rr));
-  }
-
-  private void reactionLogic(final @NotNull GenericMessageReactionEvent e, final boolean add,
-                             final @NotNull ReactionRole rr) {
-    if(e.getMessageIdLong() != rr.messageId)
-      return;
-
-    val emoji = e.getReaction().getEmoji();
-
-    try {
-      if(!emoji.asCustom().getId().equals(rr.emojiId))
-        return;
-    }
-
-    catch(final @NotNull Exception ex) {
-      if(!emoji.getName().equals(rr.emojiId))
-        return;
-    }
-
-    val member = e.getMember();
-
-    if(member == null) {
-      log.warn("reactionLogic() - {}: member is null.", add);
+    if(role == null) {
+      log.warn("reactionLogic() - {}: role {} is null.", e.eventType, rr.roleId);
       return;
     }
 
-    val role = shared.mainGuild.getRoleById(rr.roleId);
-    val roles = member.getRoles().contains(role);
+    val author = e.author;
+    val roles = author.hasRole(role);
+    val add = e.eventType.equals("add");
 
     if(add == roles)
       return;
 
-    if(role == null) {
-      log.warn("reactionLogic() - {}: role {} is null.", add, rr.roleId);
+    val server = shared.getServer(source);
+
+    if(add) {
+      server.addRoleToMember(author, role);
       return;
     }
 
-    (add ? shared.mainGuild.addRoleToMember(member, role) :
-      shared.mainGuild.removeRoleFromMember(member, role)).queue();
+    server.removeRoleFromMember(author, role);
   }
 
-  @Override public void onGuildMemberJoin(final @NotNull GuildMemberJoinEvent e) {
-    if(e.getUser().isBot())
+  public void onMemberJoinLeave(final @NotNull BatGGE e) {
+    val author = e.author;
+
+    if(author.isBot())
       return;
 
-    val member = e.getMember();
-
-    if(shared.unverified == null) {
-      log.warn("onGuildMemberJoin(): unverified id is null.");
-      System.exit(-1);
-    }
-
-    val unverified = shared.mainGuild.getRoleById(shared.unverified);
-    val id = member.getIdLong();
-
-    if(userMapper.exists(id))
-      userMapper.update(id, "here", true);
-
-    else
-      userMapper.insert(member.getIdLong());
-
-    if(member.getRoles().contains(unverified))
-      return;
+    val source = e.source;
+    val type = e.eventType;
+    val server = shared.getServer(source);
+    val unverified = server.getRoleById(Long.parseLong(shared.getValue(source, "unverified")));
 
     if(unverified == null) {
-      log.warn("onGuildMemberJoin(): unverified role is null.");
-      return;
-    }
-
-    shared.mainGuild.addRoleToMember(member, unverified).queue();
-
-    if(shared.staff == null) {
-      log.warn("onGuildMemberJoin(): staff id is null.");
+      log.warn("onMemberJoinLeave() - {}, {}: unverified role is null.", source, type);
       System.exit(-1);
     }
 
-    val channel = shared.mainGuild.getTextChannelById(shared.staff);
+    val staff = server.getChannelById(Long.parseLong(shared.getValue(e.source, "staff")));
 
-    if(channel == null) {
-      log.warn("onGuildMemberJoin(): Staff channel is null.");
-      return;
-    }
-
-    channel.sendMessage(member.getAsMention() + " joined.").queue();
-  }
-
-  @Override public void onGuildMemberRemove(@NotNull GuildMemberRemoveEvent e) {
-    if(e.getUser().isBot())
-      return;
-
-    val member = e.getMember();
-
-    if(member == null) {
-      log.warn("onGuildMemberRemove(): member is null.");
-      return;
-    }
-
-    userMapper.update(member.getIdLong(), "here", false);
-
-    if(shared.unverified == null) {
-      log.warn("onGuildMemberRemove(): unverified id is null.");
+    if(staff == null) {
+      log.warn("onMemberJoinLeave() - {}, {}: Staff channel is null.", source, type);
       System.exit(-1);
     }
 
-    val unverified = shared.mainGuild.getRoleById(shared.unverified);
+    val id = author.id;
+    val hasUnverified = author.hasRole(unverified);
+    val asMention = author.asMention;
 
-    if(unverified == null) {
-      log.warn("onGuildMemberRemove(): unverified role is null.");
-      return;
-    }
+    if(e.eventType.equals("join")) {
+      if(userMapper.exists(id))
+        userMapper.update(id, "here", true);
 
-    if(member.getRoles().contains(unverified)) {
-      if(shared.staff == null) {
-        log.warn("onGuildMemberRemove(): staff id is null.");
-        System.exit(-1);
-      }
+      else
+        userMapper.insert(id);
 
-      val channel = shared.mainGuild.getTextChannelById(shared.staff);
-
-      if(channel == null) {
-        log.warn("onGuildMemberRemove(): staff channel is null.");
+      if(hasUnverified)
         return;
-      }
 
-      channel.sendMessage(member.getAsMention() + "(" + member.getEffectiveName() + ") left.").queue();
+      server.addRoleToMember(author, unverified);
+
+      staff.sendMessage(asMention + " joined.");
 
       return;
     }
 
-    if(shared.mainChannel == null) {
-      log.warn("onGuildMemberRemove(): mainChannel id is null.");
-      System.exit(-1);
+    userMapper.update(id, "here", false);
+
+    val localName = author.localName;
+
+    if(hasUnverified) {
+      staff.sendMessage(asMention + "(" + localName + ") left.");
+      return;
     }
 
-    val general = shared.mainGuild.getTextChannelById(shared.mainChannel);
+    val general = server.getChannelById(Long.parseLong(shared.getValue(source, "general")));
 
     if(general == null) {
-      log.warn("onGuildMemberRemove(): Main channel is null.");
+      log.warn("onMemberJoinLeave() - {}, {}: Main channel is null.", source, type);
       return;
     }
 
-    general.sendMessage(member.getAsMention() + "(" + member.getEffectiveName() + ") left the valley...").queue();
+    general.sendMessage(asMention + "(" + localName + ") left the valley...");
   }
 
-  @Override public void onGuildMemberRoleAdd(@NotNull GuildMemberRoleAddEvent e) {
-    val member = e.getMember();
-    val roles = e.getRoles();
-
-    if(shared.kohai == null) {
-      log.warn("onGuildMemberRoleAdd(): kohai role is null.");
-      System.exit(-1);
-    }
-
-    val kohai = shared.mainGuild.getRoleById(shared.kohai);
-
-    if(!roles.contains(kohai))
+  public void onGuildMemberRoleAdd(@NotNull BatRCE e) {
+    if(!e.eventType.equals("add"))
       return;
 
-    if(shared.mainChannel == null) {
-      log.warn("onGuildMemberRoleAdd(): mainChannel id is null.");
-      System.exit(-1);
-    }
+    val roles = e.roles;
+    val source = e.source;
+    val server = shared.getServer(source);
 
-    val general = shared.mainGuild.getTextChannelById(shared.mainChannel);
+    if(!roles.contains(server.getRoleById(Long.parseLong(shared.getValue(source, "kohai")))))
+      return;
+
+    val general = server.getChannelById(Long.parseLong(shared.getValue(source, "mainChannel")));
 
     if(general == null) {
-      log.warn("onGuildMemberRoleAdd(): Main channel is null.");
+      log.warn("onGuildMemberRoleAdd() - {}: Main channel is null.", source);
       return;
     }
 
-    general.sendMessage("Bui! Welcome " + member.getAsMention() + "! Remember to keep an eye on " +
-      "<#1051122051466936340> and, if you want, you can introduce yourself at <#1046927743188729876>, have a nice " +
-      "stay! <:Star:1100387219975442502>").queue();
+    general.sendMessage("Bui! Welcome " + e.author.asMention + "! Remember to keep an eye on <#" +
+      shared.getValue(source, "news") + "> and, if you want, you can introduce yourself at <#" +
+      shared.getValue(source, "introduction") + ">, have a nice stay! " + shared.getValue(source, "emoji"));
   }
 }

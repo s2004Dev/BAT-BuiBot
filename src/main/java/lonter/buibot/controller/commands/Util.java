@@ -2,9 +2,7 @@ package lonter.buibot.controller.commands;
 
 import lombok.val;
 
-import lonter.bat.batobjs.BatMessageReceivedEvent;
-
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import lonter.bat.batobjs.BatMRE;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,7 +20,7 @@ public final class Util {
       "Bui! Something went wrong...";
   }
 
-  public static long getUserId(final String @NotNull[] args, final @NotNull BatMessageReceivedEvent e) {
+  public static long getUserId(final String @NotNull[] args, final @NotNull BatMRE e) {
     if(args.length == 0)
       return e.author.id;
 
@@ -49,7 +47,7 @@ public final class Util {
     }
   }
 
-  public static boolean self(final long id, final @NotNull BatMessageReceivedEvent e) {
+  public static boolean self(final long id, final @NotNull BatMRE e) {
     return id == e.self.id;
   }
 
@@ -89,10 +87,6 @@ public final class Util {
       case Double i -> i == 1. ? "" : "s";
       case null, default -> "s";
     };
-  }
-
-  public static void send(final @NotNull String message, final @NotNull MessageReceivedEvent e) {
-    e.getChannel().sendMessage(message).queue();
   }
 
   public static int map(final int x, final int inMin, final int inMax, final int outMin,

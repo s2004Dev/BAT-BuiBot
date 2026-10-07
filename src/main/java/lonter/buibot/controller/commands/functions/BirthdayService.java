@@ -24,7 +24,7 @@ import java.util.Optional;
 
 @Service @AllArgsConstructor
 public class BirthdayService {
-  private final Logger log = LoggerFactory.getLogger(this.getClass());
+  private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final UserMapper userMapper;
   private final RestTemplate restTemplate;
@@ -81,26 +81,24 @@ public class BirthdayService {
   public void checkBirthdays() {
     val users = userMapper.findAllForBirth();
 
-    if(shared.news == null) {
-      log.warn("checkBirthdays(): news channel id is null.");
-      return;
-    }
+    // FIXME
+    val source = "fluxer";
 
-    val news = shared.mainGuild.getTextChannelById(shared.news);
+    val news = shared.getServer(source).getChannelById(Long.parseLong(shared.getValue(source, "news")));
 
     if(news == null) {
-      log.warn("checkBirthdays(): news channel is null.");
+      log.warn("checkBirthdays() - {}: news channel is null.", source);
       return;
     }
 
     for(val user: users) {
       if(user.birthday == null || user.timezone == null) {
-        log.warn("checkBirthdays(): {} has null birthday information.", user.id);
+        log.warn("checkBirthdays() - {}: {} has null birthday information.", source, user.id);
         continue;
       }
 
       if(user.birthday.equals(MonthDay.now(user.timezone)) && ZonedDateTime.now(user.timezone).getHour() == 0)
-        news.sendMessage("Happy birthday <@" + user.getId() + ">!").queue();
+        news.sendMessage("Happy birthday <@" + user.getId() + ">!");
     }
   }
 }

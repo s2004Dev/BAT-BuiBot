@@ -1,47 +1,24 @@
 package lonter.buibot.controller.bot;
 
+import lombok.val;
+
+import lonter.bat.batobjs.BatServer;
+import lonter.bat.batobjs.BatShard;
 import lonter.buibot.model.entities.ReactionRole;
 import lonter.buibot.model.mappers.ReactionRoleMapper;
-
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.sharding.ShardManager;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 @Service
 public final class SharedResources {
-  public ShardManager shardManager = null;
-  public volatile Guild mainGuild = null;
   public ArrayList<ReactionRole> reactionRoles = new ArrayList<>();
-
-  @Value("${app.outputChannel:#{null}}")
-  public Long outputChannel;
-
-  @Value("${app.token:#{null}}")
-  public String token;
-
-  @Value("${app.mainGuild:#{null}}")
-  public Long mainGuildId;
-
-  @Value("${app.kohai:#{null}}")
-  public Long kohai;
-
-  @Value("${app.mainChannel:#{null}}")
-  public Long mainChannel;
-
-  @Value("${app.unverified:#{null}}")
-  public Long unverified;
-
-  @Value("${app.staff:#{null}}")
-  public Long staff;
-
-  @Value("${app.news:#{null}}")
-  public Long news;
 
   @Value("${app.coordsAPI:#{null}}")
   public String coorsAPI;
@@ -52,17 +29,58 @@ public final class SharedResources {
   @Value("${app.prefix}")
   public String prefix;
 
-  @Value("${app.owner:#{null}}")
-  public Long owner;
+  private final HashMap<String, BatServer> servers = new HashMap<>();
+  private final HashMap<String, BatShard> shards = new HashMap<>();
 
   private final ReactionRoleMapper rrMapper;
+  private final Environment env;
 
-  @Autowired
-  public SharedResources(final @NotNull ReactionRoleMapper rrMapper) {
+  @Autowired public SharedResources(final @NotNull ReactionRoleMapper rrMapper, final @NotNull Environment env) {
     this.rrMapper = rrMapper;
+    this.env = env;
   }
 
   public void updateReactionRoles() {
     reactionRoles = rrMapper.findAll();
+  }
+
+  public @NotNull String getValue(final @NotNull String source, final @NotNull String name) {
+    val property = "app." + source + "." + name;
+    val value = env.getProperty(property);
+
+    if(value == null)
+      throw new IllegalStateException(property + " is null");
+
+    return value;
+  }
+
+  public void setServer(final @NotNull String source, final @NotNull BatServer server) {
+    servers.put(source, server);
+  }
+
+  public @NotNull BatServer getServer(final @NotNull String source) {
+    val server = servers.get(source);
+
+    if(server == null)
+      throw new IllegalStateException(source + " server is null");
+
+    return server;
+  }
+
+  public void setShard(final @NotNull String source, final @NotNull BatShard shard) {
+    shards.put(source, shard);
+  }
+
+  public @NotNull BatShard getShard(final @NotNull String source) {
+    val shard = shards.get(source);
+
+    if(shard == null)
+      throw new IllegalStateException(source + " shard is null");
+
+    return shard;
+  }
+
+  public boolean getReady(final @NotNull String source) {
+    return servers.get(source) != null;
   }
 }

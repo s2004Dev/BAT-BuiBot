@@ -3,9 +3,8 @@ package lonter.buibot.controller.bot;
 import lombok.AllArgsConstructor;
 import lombok.val;
 
+import lonter.bat.batobjs.BatMRE;
 import lonter.buibot.controller.commands.functions.XPManager;
-
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -14,13 +13,14 @@ import org.springframework.stereotype.Component;
 
 @Component @AllArgsConstructor
 public final class BeforeInvoke {
-  private final Logger log = LoggerFactory.getLogger(this.getClass());
+  private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final SharedResources shared;
   private final XPManager xpManager;
 
-  public void logic(final @NotNull MessageReceivedEvent e) {
-    val id = e.getAuthor().getIdLong();
+  public void logic(final @NotNull BatMRE e) {
+    val author = e.author;
+    val id = author.id;
     val lvlThen = xpManager.getLevel(id);
 
     xpManager.addXP(id);
@@ -30,19 +30,17 @@ public final class BeforeInvoke {
     if(lvlThen == lvlNow)
       return;
 
-    if(shared.outputChannel == null) {
-      log.warn("logic(): outputChannel id is null.");
-      System.exit(-1);
-    }
+    val source = e.source;
 
-    val outputChannel = shared.mainGuild.getTextChannelById(shared.outputChannel);
+    val outputChannel = shared.getServer(source)
+      .getChannelById(Long.parseLong(shared.getValue(source, "outputChannel")));
 
     if(outputChannel == null) {
       log.warn("logic(): output channel is null.");
       return;
     }
 
-    outputChannel.sendMessage("Congratulations **" + e.getAuthor().getName() +
-      "**! You just advanced to level **" + lvlNow + "**!").queue();
+    outputChannel.sendMessage("Congratulations **" + author.localName +
+      "**! You just advanced to level **" + lvlNow + "**!");
   }
 }

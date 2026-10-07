@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 
 import org.jetbrains.annotations.NotNull;
 
+// FIXME
 @AllArgsConstructor
 public enum LanguagesEvent {
   AFRIKAANS("Afrikaans"),
@@ -63,48 +64,47 @@ public enum LanguagesEvent {
   public final String name;
   public final String wiki;
 
-//  private static StringBuilder lines;
+  // private static StringBuilder lines;
 
   LanguagesEvent(final @NotNull String name) {
     this.name = name;
     this.wiki = "https://www.lexilogos.com/english/" + name.toLowerCase() + "_dictionary.htm";
   }
 
-//  public static @Nullable LanguagesEvent getFromString(final @NotNull String value) {
-//    for(val i: values())
-//      if(i.name.equalsIgnoreCase(value))
-//        return i;
-//
-//    return null;
-//  }
+  /* public static @Nullable LanguagesEvent getFromString(final @NotNull String value) {
+    for(val i: values())
+      if(i.name.equalsIgnoreCase(value))
+        return i;
 
-//  public static LanguagesEvent getRandom() {
-//    lines = new StringBuilder();
-//    LanguagesEvent lang;
-//
-//    try(var input = new Scanner(new File(path))) {
-//      lang = getFromString(input.nextLine());
-//
-//      while(input.hasNextLine())
-//        lines.append(input.nextLine()).append("\n");
-//    }
-//
-//    catch(Exception e) {
-//      val languages = new ArrayList<>(Arrays.asList(values()));
-//
-//      Collections.shuffle(languages);
-//      lang = languages.getFirst();
-//      languages.remove(lang);
-//
-//      languages.forEach(i ->
-//        lines.append(i).append("\n"));
-//    }
-//
-//    return lang;
-//  }
+    return null;
+  }
 
-  @Override
-  public String toString() {
+  public static LanguagesEvent getRandom() {
+    lines = new StringBuilder();
+    LanguagesEvent lang;
+
+    try(var input = new Scanner(new File(path))) {
+      lang = getFromString(input.nextLine());
+
+      while(input.hasNextLine())
+        lines.append(input.nextLine()).append("\n");
+    }
+
+    catch(Exception e) {
+      val languages = new ArrayList<>(Arrays.asList(values()));
+
+      Collections.shuffle(languages);
+      lang = languages.getFirst();
+      languages.remove(lang);
+
+      languages.forEach(i ->
+        lines.append(i).append("\n"));
+    }
+
+    return lang;
+  } */
+
+  @Override public String toString() {
     return name;
   }
 }

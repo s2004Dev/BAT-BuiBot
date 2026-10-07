@@ -12,7 +12,7 @@ import lonter.bat.annotations.help.Subcommand;
 import lonter.bat.annotations.parameters.ats.Args;
 import lonter.bat.annotations.parameters.ats.Event;
 import lonter.bat.batobjs.BatEmbed;
-import lonter.bat.batobjs.BatMessageReceivedEvent;
+import lonter.bat.batobjs.BatMRE;
 import lonter.buibot.controller.bot.SharedResources;
 import lonter.buibot.controller.commands.functions.BirthdayService;
 import lonter.buibot.controller.commands.functions.InvalidCityException;
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @CommandClass @AllArgsConstructor
 public class General {
-  private final Logger log = LoggerFactory.getLogger(this.getClass());
+  private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final UserMapper userMapper;
   private final XPManager xpManager;
@@ -45,8 +45,7 @@ public class General {
   @Command @Help(description = "Bui will send the birth day of said user.", usage = "[id]")
   @Subcommand(name = "set", description = "Bui will ask you to set your birthday information.",
     usage = "<dd/MM timezone>")
-  public @NotNull String birthday(final @Args String @NotNull[] args,
-                                  final @Event @NotNull BatMessageReceivedEvent e) {
+  public @NotNull String birthday(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
     if(e.server == null)
       return "Bui! This command works only in a server!";
 
@@ -78,7 +77,7 @@ public class General {
           case InvalidCityException _ -> ex.getMessage();
 
           default -> {
-            ex.printStackTrace();
+            log.error("Birthday gave error: ", ex);
             yield wrongFormat;
           }
         };
@@ -125,7 +124,7 @@ public class General {
   }
 
   @Command @Help(description = "Bui will send the current latency.")
-  public @NotNull String ping(final @Event @NotNull BatMessageReceivedEvent e) {
+  public @NotNull String ping(final @Event @NotNull BatMRE e) {
     return "Bui! My ping is: **" + e.bat.getPing() + "ms**.";
   }
 
@@ -133,8 +132,7 @@ public class General {
   @Subcommand(name = "bui", description = "Bui will send the list of the people who said bui the most.")
   @Subcommand(name = "buizel", description = "Bui will send the list of the people who said buizel the most.")
   @Subcommand(name = "levels", description = "Bui will send the list of the people who talked the most.")
-  public @NotNull Object leaderboard(final @Args String @NotNull[] args,
-                                     final @Event @NotNull BatMessageReceivedEvent e) {
+  public @NotNull Object leaderboard(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
     if(e.server == null)
       return "Bui! This command works only in a server!";
 
@@ -211,8 +209,7 @@ public class General {
   @Command(value = "profilepicture", aliases = "pfp")
   @Help(description = "Bui will send someone's profile picture.", usage = "[id] | [args] [id]")
   @Subcommand(name = "local", description = "Bui will send someone's local profile picture", usage = "[id]")
-  public @NotNull Object profilePicture(final @Args String @NotNull[] args,
-                                        final @Event @NotNull BatMessageReceivedEvent e) {
+  public @NotNull Object profilePicture(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
     if(e.server == null)
       return "Bui! This command works only in a server!";
 
@@ -263,7 +260,7 @@ public class General {
   }
 
   @Command @Help(description = "Bui will send someone's rank card in the server (by messages).", usage = "[id]")
-  public @NotNull Object rank(final @Args String @NotNull[] args, final @Event @NotNull BatMessageReceivedEvent e) {
+  public @NotNull Object rank(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
     if(e.server == null)
       return "Bui! This command works only in a server!";
 
@@ -320,13 +317,8 @@ public class General {
   }
 
   @Command
-  public @NotNull Object reaction(final @Args String @NotNull[] args, final @Event @NotNull BatMessageReceivedEvent e) {
-    if(shared.owner == null) {
-      log.warn("reaction(): owner is null.");
-      return "Owner is null.";
-    }
-
-    if(e.author.id != shared.owner)
+  public @NotNull Object reaction(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
+    if(e.author.id != Long.parseLong(shared.getValue(e.source, "owner")))
       return "Bui! You don't have access to this command!";
 
     val def = "Usage: `" + shared.prefix + "reaction <list/add/remove> [...args]`.";
@@ -367,7 +359,7 @@ public class General {
         }
 
         catch(final @NotNull Exception ex) {
-          ex.printStackTrace();
+          log.error("The reaction command threw an exception: ", ex);
           yield "Something went wrong.";
         }
       }
@@ -392,7 +384,7 @@ public class General {
   }
 
   @Command @Help(description = "Bui will send the amount of times someone said bui things.", usage = "[id]")
-  public @NotNull Object stats(final @Args String @NotNull[] args, final @Event @NotNull BatMessageReceivedEvent e) {
+  public @NotNull Object stats(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
     val id = getUserId(args, e);
 
     if(id < 1)
