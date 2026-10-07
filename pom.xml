@@ -82,6 +82,12 @@
       <artifactId> bat </artifactId>
       <version> 0.1 </version>
     </dependency>
+
+    <dependency>
+      <groupId> lonter </groupId>
+      <artifactId> jfa </artifactId>
+      <version> 0.1 </version>
+    </dependency>
   </dependencies>
 
   <build>

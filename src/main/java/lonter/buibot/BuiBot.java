@@ -15,7 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 public class BuiBot {
-  public static void main(final String @NotNull[] args) {
+  void main(final String @NotNull[] args) {
     val app = new SpringApplication(BuiBot.class);
 
     app.setWebApplicationType(WebApplicationType.NONE);
