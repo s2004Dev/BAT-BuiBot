@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 public final class BotListener {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  private final SharedResources shared;
+  private final CustomSharedResources shared;
   private final UserMapper userMapper;
 
   private final BeforeInvoke before;

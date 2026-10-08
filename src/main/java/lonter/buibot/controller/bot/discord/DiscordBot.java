@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.val;
 
 import lonter.bat.wrappers.discord.DiscordShard;
-import lonter.buibot.controller.bot.SharedResources;
+import lonter.buibot.controller.bot.CustomSharedResources;
 
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
@@ -27,7 +27,7 @@ public final class DiscordBot {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final DiscordBotListener botListener;
-  private final SharedResources shared;
+  private final CustomSharedResources shared;
 
   @EventListener(ApplicationReadyEvent.class)
   private void start() {

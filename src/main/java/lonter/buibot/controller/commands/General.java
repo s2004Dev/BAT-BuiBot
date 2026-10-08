@@ -13,7 +13,7 @@ import lonter.bat.annotations.parameters.ats.Args;
 import lonter.bat.annotations.parameters.ats.Event;
 import lonter.bat.batobjs.BatEmbed;
 import lonter.bat.batobjs.BatMRE;
-import lonter.buibot.controller.bot.SharedResources;
+import lonter.buibot.controller.bot.CustomSharedResources;
 import lonter.buibot.controller.commands.functions.BirthdayService;
 import lonter.buibot.controller.commands.functions.InvalidCityException;
 import lonter.buibot.controller.commands.functions.XPManager;
@@ -39,7 +39,7 @@ public class General {
   private final UserMapper userMapper;
   private final XPManager xpManager;
   private final BirthdayService birthdayService;
-  private final SharedResources shared;
+  private final CustomSharedResources shared;
   private final ReactionRoleMapper rrMapper;
 
   @Command @Help(description = "Bui will send the birth day of said user.", usage = "[id]")

@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.val;
 
 import lonter.bat.wrappers.fluxer.FluxerShard;
-import lonter.buibot.controller.bot.SharedResources;
+import lonter.buibot.controller.bot.CustomSharedResources;
 import lonter.jfa.api.OnlineStatus;
 import lonter.jfa.api.entities.Activity;
 import lonter.jfa.api.requests.GatewayIntent;
@@ -26,7 +26,7 @@ public final class FluxerBot {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final FluxerBotListener botListener;
-  private final SharedResources shared;
+  private final CustomSharedResources shared;
 
   @EventListener(ApplicationReadyEvent.class)
   private void start() {

@@ -7,7 +7,7 @@ import lonter.bat.wrappers.discord.DiscordGRE;
 import lonter.bat.wrappers.discord.DiscordMRE;
 import lonter.bat.wrappers.discord.DiscordRCE;
 import lonter.buibot.controller.bot.BotListener;
-import lonter.buibot.controller.bot.SharedResources;
+import lonter.buibot.controller.bot.CustomSharedResources;
 
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 public final class DiscordBotListener extends ListenerAdapter {
   private static final String source = "discord";
 
-  private final SharedResources shared;
+  private final CustomSharedResources shared;
   private final BotListener botListener;
 
   @Override public void onMessageReceived(final @NotNull MessageReceivedEvent e) {

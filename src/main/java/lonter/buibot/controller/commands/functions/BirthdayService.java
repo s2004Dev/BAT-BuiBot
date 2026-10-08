@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.val;
 
-import lonter.buibot.controller.bot.SharedResources;
+import lonter.buibot.controller.bot.CustomSharedResources;
 import lonter.buibot.model.entities.User;
 import lonter.buibot.model.mappers.UserMapper;
 
@@ -28,7 +28,7 @@ public class BirthdayService {
 
   private final UserMapper userMapper;
   private final RestTemplate restTemplate;
-  private final SharedResources shared;
+  private final CustomSharedResources shared;
 
   public void setBirthday(final long id, final int day, final int month, final @NotNull String locationName)
       throws Exception {

@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 @Component @AllArgsConstructor
 public final class AfterInvoke {
   private final UserMapper userMapper;
-  private final SharedResources sharedResources;
+  private final CustomSharedResources sharedResources;
 
   private static final HashMap<String, HashMap<String, String>> EMOJIS = new HashMap<>() {{
     put("discord", new HashMap<>() {{

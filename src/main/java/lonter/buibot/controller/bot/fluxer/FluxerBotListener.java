@@ -7,7 +7,7 @@ import lonter.bat.wrappers.fluxer.FluxerGRE;
 import lonter.bat.wrappers.fluxer.FluxerMRE;
 import lonter.bat.wrappers.fluxer.FluxerRCE;
 import lonter.buibot.controller.bot.BotListener;
-import lonter.buibot.controller.bot.SharedResources;
+import lonter.buibot.controller.bot.CustomSharedResources;
 import lonter.jfa.api.events.guild.GuildReadyEvent;
 import lonter.jfa.api.events.guild.member.GuildMemberJoinEvent;
 import lonter.jfa.api.events.guild.member.GuildMemberRemoveEvent;
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 public final class FluxerBotListener extends ListenerAdapter {
   private static final String source = "fluxer";
 
-  private final SharedResources shared;
+  private final CustomSharedResources shared;
   private final BotListener botListener;
 
   @Override public void onMessageReceived(final @NotNull MessageReceivedEvent e) {

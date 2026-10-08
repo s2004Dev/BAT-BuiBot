@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public final class BeforeInvoke {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  private final SharedResources shared;
+  private final CustomSharedResources shared;
   private final XPManager xpManager;
 
   public void logic(final @NotNull BatMRE e) {
