@@ -169,14 +169,13 @@ public final class BotListener {
     if(!e.eventType.equals("add"))
       return;
 
-    val roles = e.roles;
     val source = e.source;
-    val server = shared.getServer(source);
+    val kohai = Long.parseLong(shared.getValue(source, "kohai"));
 
-    if(!roles.contains(server.getRoleById(Long.parseLong(shared.getValue(source, "kohai")))))
+    if(e.roles.stream().noneMatch(i -> i.id == kohai))
       return;
 
-    val general = server.getChannelById(Long.parseLong(shared.getValue(source, "mainChannel")));
+    val general = shared.getServer(source).getChannelById(Long.parseLong(shared.getValue(source, "mainChannel")));
 
     if(general == null) {
       log.warn("onGuildMemberRoleAdd() - {}: Main channel is null.", source);
