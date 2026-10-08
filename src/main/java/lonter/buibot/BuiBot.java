@@ -8,12 +8,13 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
+@SpringBootApplication
+
 @ComponentScan(basePackages = {
   "lonter.buibot",
   "lonter.bat"
 })
 
-@SpringBootApplication
 public class BuiBot {
   void main(final String @NotNull[] args) {
     val app = new SpringApplication(BuiBot.class);
