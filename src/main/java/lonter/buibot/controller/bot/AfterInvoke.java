@@ -11,8 +11,8 @@ import lonter.buibot.model.mappers.UserMapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.MonthDay;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 @Component @AllArgsConstructor
 public final class AfterInvoke {
   private final UserMapper userMapper;
+  private final SharedResources sharedResources;
 
   private static final HashMap<String, HashMap<String, String>> EMOJIS = new HashMap<>() {{
     put("discord", new HashMap<>() {{
@@ -54,7 +55,7 @@ public final class AfterInvoke {
     if(saxophone.contains("\uD83C\uDFB7\uD83D\uDC1B") || saxophone.contains("\uD83C\uDFB7\uD83E\uDDA6"))
       saxophone(e);
 
-    if(MonthDay.now(ZoneId.of("Europe/Rome")).equals(MonthDay.of(1, 9)) && (msgRaw.contains("hap") ||
+    if(MonthDay.from(e.self.createdAt).equals(MonthDay.from(LocalDate.now())) && (msgRaw.contains("hap") ||
        msgRaw.contains("birth")))
       birthday(msgRaw, e);
 
@@ -86,7 +87,7 @@ public final class AfterInvoke {
     if(!Pattern.compile("<@(\\d+)>").matcher(input).find() && !input.contains("buibot"))
       return;
 
-    e.reply("Bui! Thank you !! <:Amazed:1087132828585701498>", true);
+    e.reply("Bui! Thank you !! " + sharedResources.getValue(e.source, "amazed"), true);
   }
 
   private void bui(final @NotNull BatMRE e) {
@@ -104,7 +105,9 @@ public final class AfterInvoke {
   }
 
   private static void emoji(@NotNull String input, final @NotNull BatMRE e) {
-    for(val em: EMOJIS.get(e.source).values())
+    val emojis = EMOJIS.get(e.source);
+
+    for(val em: emojis.values())
       input = input.replace(em, "");
 
     val msg = new StringBuilder();
@@ -112,8 +115,8 @@ public final class AfterInvoke {
     for(var em: findEmojis(input)) {
       em = em.toLowerCase();
 
-      if(EMOJIS.containsKey(em))
-        msg.append(EMOJIS.get(em)).append(" ");
+      if(emojis.containsKey(em))
+        msg.append(emojis.get(em)).append(" ");
     }
 
     if(msg.isEmpty())
