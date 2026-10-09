@@ -60,14 +60,6 @@ public final class BotListener extends BatListenerAdapter {
   }
 
   @Override public void onServerReady(final @NotNull String source) {
-    val server = shared.getShard(source).getServerById(Long.parseLong(shared.getValue(source, "mainServer")));
-
-    if(server == null) {
-      log.warn("onServerReady(): {} main server is null.", source);
-      System.exit(-1);
-    }
-
-    shared.setServer(source, server);
     shared.updateReactionRoles();
   }
 
