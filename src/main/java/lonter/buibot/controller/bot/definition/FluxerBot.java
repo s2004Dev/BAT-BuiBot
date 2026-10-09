@@ -22,33 +22,29 @@ import org.springframework.stereotype.Service;
 
 @Service @AllArgsConstructor
 public final class FluxerBot {
-  private static final String source = "fluxer";
+  private static final String SOURCE = "fluxer";
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  private final FluxerBotListener botListener;
+  private final FluxerBotListener listener;
   private final CustomSharedResources shared;
 
   @EventListener(ApplicationReadyEvent.class)
   private void start() {
-    shared.updateReactionRoles();
+    shared.initServer(SOURCE);
 
     try {
-      val shard = DefaultShardManagerBuilder.createDefault(shared.getValue(source, "token"))
+      val shard = DefaultShardManagerBuilder.createDefault(shared.getValue(SOURCE, "token"))
         .setStatus(OnlineStatus.IDLE).setActivity(Activity.watching("Buizels"))
         .enableIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS)
         .setMemberCachePolicy(MemberCachePolicy.ALL).setChunkingFilter(ChunkingFilter.ALL).build();
 
-      shared.setShard(source, new FluxerShard(shard));
-
-      shard.addEventListener(botListener);
-
-      while(!shared.getReady(source))
-        Thread.onSpinWait();
+      shared.setShard(SOURCE, new FluxerShard(shard));
+      shard.addEventListener(listener);
     }
 
     catch(final @NotNull Exception e) {
-      log.error("{} application threw an exception: ", source, e);
+      log.error("{} application threw an exception: ", SOURCE, e);
       System.exit(-1);
     }
   }

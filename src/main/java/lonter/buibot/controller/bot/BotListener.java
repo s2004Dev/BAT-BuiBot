@@ -59,15 +59,16 @@ public final class BotListener extends BatListenerAdapter {
     }
   }
 
-  @Override public void onGuildReady(final @NotNull String source) {
-    val guild = shared.getShard(source).getServerById(Long.parseLong(shared.getValue(source, "mainGuild")));
+  @Override public void onServerReady(final @NotNull String source) {
+    val server = shared.getShard(source).getServerById(Long.parseLong(shared.getValue(source, "mainServer")));
 
-    if(guild == null) {
-      log.warn("onGuildReady(): {} main guild is null.", source);
+    if(server == null) {
+      log.warn("onServerReady(): {} main server is null.", source);
       System.exit(-1);
     }
 
-    shared.setServer(source, guild);
+    shared.setServer(source, server);
+    shared.updateReactionRoles();
   }
 
   @Override public void onMessageReaction(final @NotNull BatGRE e) {
@@ -137,7 +138,7 @@ public final class BotListener extends BatListenerAdapter {
     general.sendMessage(asMention + "(" + localName + ") left the valley...");
   }
 
-  @Override public void onGuildMemberRoleAdd(final @NotNull BatRCE e) {
+  @Override public void onServerMemberRoleChange(final @NotNull BatRCE e) {
     if(!e.eventType.equals("add"))
       return;
 
