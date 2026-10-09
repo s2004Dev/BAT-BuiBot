@@ -3,7 +3,6 @@ package lonter.buibot.controller.bot;
 import lombok.AllArgsConstructor;
 import lombok.val;
 
-import lonter.bat.CommandHandler;
 import lonter.bat.batobjs.*;
 import lonter.buibot.model.entities.ReactionRole;
 import lonter.buibot.model.mappers.UserMapper;
@@ -21,7 +20,6 @@ public final class BotListener extends BatListenerAdapter {
   private final UserMapper userMapper;
 
   private final BeforeInvoke before;
-  private final CommandHandler handler;
   private final AfterInvoke after;
 
   @Override public void onMessageReceived(final @NotNull BatMRE e) {
@@ -39,7 +37,6 @@ public final class BotListener extends BatListenerAdapter {
 
     try {
       before.logic(e);
-      handler.invoke(e);
       after.logic(e);
     }
 
