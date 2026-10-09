@@ -1,8 +1,9 @@
-package lonter.buibot.controller.bot.fluxer;
+package lonter.buibot.controller.bot.definition;
 
 import lombok.AllArgsConstructor;
 import lombok.val;
 
+import lonter.bat.wrappers.fluxer.FluxerBotListener;
 import lonter.bat.wrappers.fluxer.FluxerShard;
 import lonter.buibot.controller.bot.CustomSharedResources;
 import lonter.jfa.api.OnlineStatus;

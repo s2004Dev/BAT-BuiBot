@@ -1,8 +1,9 @@
-package lonter.buibot.controller.bot.discord;
+package lonter.buibot.controller.bot.definition;
 
 import lombok.AllArgsConstructor;
 import lombok.val;
 
+import lonter.bat.wrappers.discord.DiscordBotListener;
 import lonter.bat.wrappers.discord.DiscordShard;
 import lonter.buibot.controller.bot.CustomSharedResources;
 

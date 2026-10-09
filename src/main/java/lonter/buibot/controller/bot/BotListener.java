@@ -4,10 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.val;
 
 import lonter.bat.CommandHandler;
-import lonter.bat.batobjs.BatGGE;
-import lonter.bat.batobjs.BatGRE;
-import lonter.bat.batobjs.BatMRE;
-import lonter.bat.batobjs.BatRCE;
+import lonter.bat.batobjs.*;
 import lonter.buibot.model.entities.ReactionRole;
 import lonter.buibot.model.mappers.UserMapper;
 
@@ -17,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component @AllArgsConstructor
-public final class BotListener {
+public final class BotListener extends BatListenerAdapter {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final CustomSharedResources shared;
@@ -27,7 +24,7 @@ public final class BotListener {
   private final CommandHandler handler;
   private final AfterInvoke after;
 
-  public void onMessageReceived(final @NotNull BatMRE e) {
+  @Override public void onMessageReceived(final @NotNull BatMRE e) {
     val message = e.message;
 
     if(message.isSystemPinned()) {
@@ -62,7 +59,7 @@ public final class BotListener {
     }
   }
 
-  public void onGuildReady(final String source) {
+  @Override public void onGuildReady(final @NotNull String source) {
     val guild = shared.getShard(source).getServerById(Long.parseLong(shared.getValue(source, "mainGuild")));
 
     if(guild == null) {
@@ -73,36 +70,11 @@ public final class BotListener {
     shared.setServer(source, guild);
   }
 
-  public void reactionLogic(final @NotNull BatGRE e, final @NotNull ReactionRole rr) {
-    if(e.messageId != rr.messageId || !e.emojiId.equals(rr.emojiId))
-      return;
-
-    val source = e.source;
-    val role = shared.getServer(source).getRoleById(rr.roleId);
-
-    if(role == null) {
-      log.warn("reactionLogic() - {}: role {} is null.", e.eventType, rr.roleId);
-      return;
-    }
-
-    val author = e.author;
-    val roles = author.hasRole(role);
-    val add = e.eventType.equals("add");
-
-    if(add == roles)
-      return;
-
-    val server = shared.getServer(source);
-
-    if(add) {
-      server.addRoleToMember(author, role);
-      return;
-    }
-
-    server.removeRoleFromMember(author, role);
+  @Override public void onMessageReaction(final @NotNull BatGRE e) {
+    shared.reactionRoles.forEach(rr -> reactionLogic(e, rr));
   }
 
-  public void onMemberJoinLeave(final @NotNull BatGGE e) {
+  @Override public void onMemberJoinLeave(final @NotNull BatGGE e) {
     val author = e.author;
 
     if(author.isBot())
@@ -165,7 +137,7 @@ public final class BotListener {
     general.sendMessage(asMention + "(" + localName + ") left the valley...");
   }
 
-  public void onGuildMemberRoleAdd(@NotNull BatRCE e) {
+  @Override public void onGuildMemberRoleAdd(final @NotNull BatRCE e) {
     if(!e.eventType.equals("add"))
       return;
 
@@ -185,5 +157,34 @@ public final class BotListener {
     general.sendMessage("Bui! Welcome " + e.author.asMention + "! Remember to keep an eye on <#" +
       shared.getValue(source, "news") + "> and, if you want, you can introduce yourself at <#" +
       shared.getValue(source, "introduction") + ">, have a nice stay! " + shared.getValue(source, "emoji"));
+  }
+
+  public void reactionLogic(final @NotNull BatGRE e, final @NotNull ReactionRole rr) {
+    if(e.messageId != rr.messageId || !e.emojiId.equals(rr.emojiId))
+      return;
+
+    val source = e.source;
+    val role = shared.getServer(source).getRoleById(rr.roleId);
+
+    if(role == null) {
+      log.warn("reactionLogic() - {}: role {} is null.", e.eventType, rr.roleId);
+      return;
+    }
+
+    val author = e.author;
+    val roles = author.hasRole(role);
+    val add = e.eventType.equals("add");
+
+    if(add == roles)
+      return;
+
+    val server = shared.getServer(source);
+
+    if(add) {
+      server.addRoleToMember(author, role);
+      return;
+    }
+
+    server.removeRoleFromMember(author, role);
   }
 }
