@@ -35,25 +35,8 @@ public final class BotListener extends BatListenerAdapter {
     if(author.isBot())
       return;
 
-    try {
-      before.logic(e);
-      after.logic(e);
-    }
-
-    catch(final @NotNull Exception ex) {
-      log.error("BatMRE {} threw an exception: ", e.source, ex);
-
-      log.warn("onMessageReceived(): author: {}", author.globalName);
-      log.warn("onMessageReceived(): message: {}", message.text);
-
-      if(e.server == null)
-        return;
-
-      val channel = e.channel;
-
-      log.warn("onMessageReceived(): channel: {}; id: {}", channel.name, channel.id);
-      log.warn("onMessageReceived(): guild: {}", e.server.name);
-    }
+    before.logic(e);
+    after.logic(e);
   }
 
   @Override public void onServerReady(final @NotNull String source) {
