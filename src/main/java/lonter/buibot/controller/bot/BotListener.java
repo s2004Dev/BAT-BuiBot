@@ -32,7 +32,7 @@ public final class BotListener extends BatListenerAdapter {
 
     val author = e.author;
 
-    if(author.isBot())
+    if(author.isBot)
       return;
 
     before.logic(e);
@@ -50,7 +50,7 @@ public final class BotListener extends BatListenerAdapter {
   @Override public void onMemberJoinLeave(final @NotNull BatGGE e) {
     val author = e.author;
 
-    if(author.isBot())
+    if(author.isBot)
       return;
 
     val source = e.source;
