@@ -100,10 +100,10 @@ public final class BotListener extends BatListenerAdapter {
       return;
     }
 
-    val general = server.getChannelById(Long.parseLong(shared.getValue(source, "general")));
+    val general = server.getChannelById(Long.parseLong(shared.getValue(source, "mainChannel")));
 
     if(general == null) {
-      log.warn("onMemberJoinLeave() - {}, {}: Main channel is null.", source, type);
+      log.warn("onMemberJoinLeave() - {}, {}: general is null.", source, type);
       return;
     }
 
