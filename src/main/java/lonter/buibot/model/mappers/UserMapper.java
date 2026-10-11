@@ -12,44 +12,62 @@ import java.util.Optional;
 
 @Mapper
 public interface UserMapper {
-  @Select("SELECT id, bui, buizel FROM users WHERE id = #{ id }")
-  @NotNull Optional<User> findById(final long id);
+  @Select("SELECT u.id, u.bui, u.buizel, u.source FROM users u JOIN user_mappings m ON u.id = m.id " +
+          "WHERE m.id_source = #{ id } AND m.source = #{ source }")
+  @NotNull Optional<User> findById(final @NotNull String source, final @NotNull String id);
 
-  @Select("SELECT xps FROM users WHERE id = #{ id }")
-  @NotNull Optional<Integer> findXpsById(final long id);
+  @Select("SELECT u.xps FROM users u JOIN user_mappings m ON u.id = m.id " +
+          "WHERE m.id_source = #{ id } AND m.source = #{ source }")
+  @NotNull Optional<Integer> findXpsById(final @NotNull String source, final @NotNull String id);
 
-//  @Select("SELECT joined FROM users WHERE id = #{ id }")
-//  @NotNull Optional<Integer> findJoinedById(final long id);
+  @Select("SELECT u.birthday, u.timezone FROM users u JOIN user_mappings m ON u.id = m.id " +
+          "WHERE m.id_source = #{ id } AND m.source = #{ source }")
+  @NotNull Optional<User> findBirthdayById(final @NotNull String source, final @NotNull String id);
 
-  @Select("SELECT birthday, timezone FROM users WHERE id = #{ id }")
-  @NotNull Optional<User> findBirthdayById(final long id);
+  @Select("SELECT EXISTS (SELECT 1 FROM users u JOIN user_mappings m ON u.id = m.id " +
+          "WHERE m.id_source = #{ id } AND m.source = #{ source })")
+  boolean exists(final @NotNull String source, final @NotNull String id);
 
-  @Select("SELECT EXISTS (SELECT 1 FROM users WHERE id = #{ id })")
-  boolean exists(final long id);
+  @Select("WITH new AS (INSERT INTO users(id, bui, buizel, xps, joined, here, source) " +
+          "VALUES(nextval('user_ids'), NULL, NULL, 0, CURRENT_TIMESTAMP, TRUE, #{ source }) RETURNING * ), " +
+          "mapping AS (INSERT INTO user_mappings(id, id_source, source) " +
+          "SELECT id, #{ id }, #{ source } FROM new) SELECT * FROM new")
+  @NotNull User insert(final @NotNull String source, final @NotNull String id);
 
-  @Select("INSERT INTO users(id, bui, buizel, xps, joined, here) " +
-          "VALUES(#{ id }, NULL, NULL, 0, CURRENT_TIMESTAMP, TRUE) RETURNING *")
-  @NotNull User insert(final long id);
+  @Select("INSERT INTO users(id, bui, buizel, xps, joined, here, source) " +
+          "VALUES(nextval('user_ids'), #{ bui }, #{ buizel }, #{ xps }, #{ joined }, #{ here }, #{ source })")
+  void insertOld(final @NotNull User user);
 
-  @Update("UPDATE users SET ${ category } = #{ value } WHERE id = #{ id }")
-  void update(final long id, final @NotNull String category, final Object value);
+  @Update("UPDATE users SET ${ category } = #{ value } " +
+          "WHERE id = (SELECT id FROM user_mappings WHERE id_source = #{ id } AND source = #{ source })")
+  void update(final @NotNull String source, final @NotNull String id, final @NotNull String category,
+              final Object value);
 
   @Update("UPDATE users SET bui = #{ bui }, buizel = #{ buizel } WHERE id = #{ id }")
   void updateBuis(final @NotNull User user);
 
-  @Update("UPDATE users SET birthday = #{ birthday }, timezone = #{ timezone } WHERE id = #{ id }")
+  @Update("UPDATE users SET birthday = #{ birthday }, timezone = #{ timezone } " +
+          "WHERE id = (SELECT id FROM user_mappings WHERE id_source = #{ idSource } AND source = #{ source })")
   void updateBirth(final @NotNull User user);
 
-  @Select("SELECT id, ${ category } FROM users WHERE ${ category } IS NOT NULL AND here = TRUE " +
-          "ORDER BY ${ category } DESC LIMIT 10")
+  @Select("SELECT * FROM users")
+  @NotNull ArrayList<User> findAllForMigration();
+
+  @Select("SELECT u.id, u.${ category }, m.id_source AS idSource FROM users u " +
+          "JOIN user_mappings m ON u.id = m.id AND u.source = m.source " +
+          "WHERE u.${ category } IS NOT NULL AND u.here = TRUE " +
+          "ORDER BY u.${ category } DESC LIMIT 10")
   @NotNull ArrayList<User> findAllForRank(final @NotNull String category);
 
-  @Select("SELECT id, birthday, timezone FROM users WHERE birthday IS NOT NULL AND here = TRUE")
+  @Select("SELECT u.id, u.birthday, u.timezone, m.id_source AS idSource FROM users u " +
+          "JOIN user_mappings m ON u.id = m.id AND u.source = m.source " +
+          "WHERE u.birthday IS NOT NULL AND u.here = TRUE")
   @NotNull ArrayList<User> findAllForBirth();
 
   @Select("SELECT COUNT(*) FROM users WHERE xps IS NOT NULL AND here = TRUE")
   @NotNull Integer getCount();
 
-  @Select("SELECT ROW_NUMBER() OVER (ORDER BY xps) FROM users WHERE id = #{ id }")
-  @NotNull Integer getIndex(final long id);
+  @Select("SELECT res.rank FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY xps DESC) AS rank FROM users) res " +
+          "JOIN user_mappings m ON res.id = m.id WHERE m.id_source = #{ id } AND m.source = #{ source }")
+  @NotNull Optional<Integer> getIndex(final @NotNull String source, final @NotNull String id);
 }

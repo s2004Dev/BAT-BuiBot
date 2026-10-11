@@ -1,4 +1,4 @@
-package lonter.buibot.controller.config;
+package lonter.buibot.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

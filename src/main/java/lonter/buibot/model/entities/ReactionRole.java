@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 @Data @AllArgsConstructor
 @NoArgsConstructor @Builder
-public class ReactionRole {
+public final class ReactionRole {
   public long id;
   public String name;
   public long messageId;

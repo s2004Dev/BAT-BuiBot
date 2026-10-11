@@ -7,6 +7,7 @@ import lombok.val;
 
 import lonter.buibot.model.mappers.UserMapper;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -14,34 +15,34 @@ import java.util.HashMap;
 
 @Service @AllArgsConstructor
 public final class XPManager {
-  public final HashMap<Long, Instant> cooldownMap = new HashMap<>();
+  public final HashMap<String, Instant> cooldownMap = new HashMap<>();
 
-  private final UserMapper userMapper;
+  private final UserMapper repo;
 
-  public void addXP(final long id) {
+  public void addXP(final @NotNull String source, final @NotNull String id) {
     val currentTime = Instant.now();
     val lastMessageTime = cooldownMap.getOrDefault(id, Instant.EPOCH);
 
     if(currentTime.isBefore(lastMessageTime.plusSeconds(60)))
       return;
 
-    userMapper.update(id, "xps", getXP(id)+rand(15, 25));
+    repo.update(source, id, "xps", getXP(source, id)+rand(15, 25));
     cooldownMap.put(id, currentTime);
   }
 
-  public int getXP(final long id) {
-    val found = userMapper.findXpsById(id);
+  public int getXP(final @NotNull String source, final @NotNull String id) {
+    val found = repo.findXpsById(source, id);
 
     if(found.isPresent())
       return found.get();
 
-    userMapper.insert(id);
+    repo.insert(source, id);
 
     return 0;
   }
 
-  public int getLevel(final long id) {
-    val experience = getXP(id);
+  public int getLevel(final @NotNull String source, final @NotNull String id) {
+    val experience = getXP(source, id);
 
     if(experience < 100)
       return 0;

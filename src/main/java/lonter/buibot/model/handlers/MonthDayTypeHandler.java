@@ -15,30 +15,27 @@ import java.sql.SQLException;
 import java.time.MonthDay;
 
 @MappedTypes(MonthDay.class)
-public class MonthDayTypeHandler extends BaseTypeHandler<MonthDay> {
-  @Override
-  public void setNonNullParameter(final @NotNull PreparedStatement ps, final int i, final @NotNull MonthDay parameter,
-                                  final @Nullable JdbcType jdbcType) throws SQLException {
+public final class MonthDayTypeHandler extends BaseTypeHandler<MonthDay> {
+  @Override public void setNonNullParameter(final @NotNull PreparedStatement ps, final int i,
+                                            final @NotNull MonthDay parameter,
+                                            final @Nullable JdbcType jdbcType) throws SQLException {
     ps.setString(i, parameter.toString());
   }
 
-  @Override
-  public @Nullable MonthDay getNullableResult(final @NotNull ResultSet rs, final @NotNull String columnName)
-      throws SQLException {
+  @Override public @Nullable MonthDay getNullableResult(final @NotNull ResultSet rs,
+                                                        final @NotNull String columnName) throws SQLException {
     val dbValue = rs.getString(columnName);
     return dbValue == null ? null : MonthDay.parse(dbValue);
   }
 
-  @Override
-  public @Nullable MonthDay getNullableResult(final @NotNull ResultSet rs, final int columnIndex)
-      throws SQLException {
+  @Override public @Nullable MonthDay getNullableResult(final @NotNull ResultSet rs,
+                                                        final int columnIndex) throws SQLException {
     val dbValue = rs.getString(columnIndex);
     return dbValue == null ? null : MonthDay.parse(dbValue);
   }
 
-  @Override
-  public @Nullable MonthDay getNullableResult(final @NotNull CallableStatement cs, final int columnIndex)
-      throws SQLException {
+  @Override public @Nullable MonthDay getNullableResult(final @NotNull CallableStatement cs,
+                                                        final int columnIndex) throws SQLException {
     val dbValue = cs.getString(columnIndex);
     return dbValue == null ? null : MonthDay.parse(dbValue);
   }

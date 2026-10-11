@@ -23,27 +23,26 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 
 @Service @AllArgsConstructor
-public class BirthdayService {
+public final class BirthdayService {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  private final UserMapper userMapper;
+  private final UserMapper repo;
   private final RestTemplate restTemplate;
   private final CustomSharedResources shared;
 
-  public void setBirthday(final long id, final int day, final int month, final @NotNull String locationName)
-      throws Exception {
+  public void setBirthday(final long idB, final int day, final int month, final @NotNull String locationName,
+                          final @NotNull String sourceB) throws Exception {
     val foundZoneId = findTimezoneForLocation(locationName);
 
     if(foundZoneId.isEmpty())
       throw new InvalidCityException("Bui! I can't find the timezone for \"" + locationName + "\"...");
 
-    val user = new User();
-
-    user.id = id;
-    user.birthday = MonthDay.of(month, day);
-    user.timezone = foundZoneId.get();
-
-    userMapper.updateBirth(user);
+    repo.updateBirth(new User() {{
+      idSource = String.valueOf(idB);
+      source = sourceB;
+      birthday = MonthDay.of(month, day);
+      timezone = foundZoneId.get();
+    }});
   }
 
   private @NotNull Optional<ZoneId> findTimezoneForLocation(final @NotNull String locationName) {
@@ -79,26 +78,27 @@ public class BirthdayService {
 
   @Scheduled(cron = "0 0 * * * *")
   public void checkBirthdays() {
-    val users = userMapper.findAllForBirth();
-
-    // FIXME
-    val source = "fluxer";
-
-    val news = shared.getServer(source).getChannelById(Long.parseLong(shared.getValue(source, "news")));
-
-    if(news == null) {
-      log.warn("checkBirthdays() - {}: news channel is null.", source);
-      return;
-    }
+    val users = repo.findAllForBirth();
 
     for(val user: users) {
+      val source = user.source;
+
       if(user.birthday == null || user.timezone == null) {
         log.warn("checkBirthdays() - {}: {} has null birthday information.", source, user.id);
         continue;
       }
 
-      if(user.birthday.equals(MonthDay.now(user.timezone)) && ZonedDateTime.now(user.timezone).getHour() == 0)
-        news.sendMessage("Happy birthday <@" + user.getId() + ">!");
+      if(!user.birthday.equals(MonthDay.now(user.timezone)) || ZonedDateTime.now(user.timezone).getHour() != 0)
+        continue;
+
+      val news = shared.getServer(source).getChannelById(Long.parseLong(shared.getValue(source, "news")));
+
+      if(news == null) {
+        log.warn("checkBirthdays() - {}: news channel is null.", source);
+        return;
+      }
+
+      news.sendMessage("Happy birthday <@" + user.idSource + ">!");
     }
   }
 }

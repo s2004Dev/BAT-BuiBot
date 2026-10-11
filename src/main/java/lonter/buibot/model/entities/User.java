@@ -11,8 +11,10 @@ import java.util.Date;
 
 @Data @AllArgsConstructor
 @NoArgsConstructor @Builder
-public final class User {
+public class User {
   public long id;
+  public String idSource;
+  public String source;
   public int bui;
   public int buizel;
   public int xps;

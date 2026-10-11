@@ -20,17 +20,16 @@ public final class BeforeInvoke {
 
   public void logic(final @NotNull BatMRE e) {
     val author = e.author;
-    val id = author.id;
-    val lvlThen = xpManager.getLevel(id);
+    val source = e.source;
+    val id = String.valueOf(author.id);
+    val lvlThen = xpManager.getLevel(source, id);
 
-    xpManager.addXP(id);
+    xpManager.addXP(source, id);
 
-    val lvlNow = xpManager.getLevel(id);
+    val lvlNow = xpManager.getLevel(source, id);
 
     if(lvlThen == lvlNow)
       return;
-
-    val source = e.source;
 
     val outputChannel = shared.getServer(source)
       .getChannelById(Long.parseLong(shared.getValue(source, "outputChannel")));

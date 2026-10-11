@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @CommandClass @AllArgsConstructor
-public class General {
+public final class General {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final UserMapper userMapper;
@@ -48,6 +48,8 @@ public class General {
   public @NotNull String birthday(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
     if(e.server == null)
       return "Bui! This command works only in a server!";
+
+    val source = e.source;
 
     if(args.length > 0 && args[0].equals("set")) {
       val wrongFormat = "Bui! Wrong format! `" + shared.prefix + "birthday set dd/MM timezone`.";
@@ -66,7 +68,7 @@ public class General {
 
         MonthDay.of(month, day);
 
-        birthdayService.setBirthday(e.author.id, day, month, String.join("_", removeTo(args, 2)));
+        birthdayService.setBirthday(e.author.id, day, month, String.join("_", removeTo(args, 2)), source);
 
         return "Bui! Now I know your birthday!";
       }
@@ -96,7 +98,7 @@ public class General {
     if(id < 1)
       return sendMessageMention(id);
 
-    val found = userMapper.findBirthdayById(id);
+    val found = userMapper.findBirthdayById(source, String.valueOf(id));
     val idk = "Bui! I don't know this user birthday...";
 
     if(found.isEmpty())
@@ -154,24 +156,28 @@ public class General {
     val notInTop = new AtomicBoolean(true);
     val users = userMapper.findAllForRank(type.equals("levels") ? "xps" : type);
     val i = new AtomicInteger();
+    val source = e.source;
 
     users.forEach(user -> {
       val line = new StringBuilder();
+      val idSource = user.idSource;
 
       val num = switch(type) {
         case "bui" -> user.bui;
         case "buizel" -> user.buizel;
-        case "levels" -> xpManager.getLevel(user.id);
+        case "levels" -> xpManager.getLevel(source, idSource);
         default -> 0;
       };
 
-      if(idCaller == user.id)
+      val idLong = Long.parseLong(idSource);
+
+      if(idCaller == idLong)
         notInTop.set(false);
 
-      val member = e.server.getMemberById(user.id);
+      val member = shared.getServer(user.source).getMemberById(idLong);
 
       if(member == null) {
-        log.warn("leaderboard(): member {} was found null.", user.id);
+        log.warn("leaderboard(): member {} was found null.", idSource);
         return;
       }
 
@@ -187,7 +193,14 @@ public class General {
       text.append("\n\n***").append(cut == 1 ? "A line was" : cut + " lines were").append(" cut.***");
 
     if(notInTop.get()) {
-      var place = userMapper.getIndex(idCaller);
+      val found = userMapper.getIndex(source, String.valueOf(idCaller));
+
+      if(found.isEmpty()) {
+        log.error("User {} was null in leaderboard.", idCaller);
+        return "Bui! Something went wrong!";
+      }
+
+      var place = found.get();
 
       if(place == 0)
         place = users.size()+1;
@@ -272,12 +285,15 @@ public class General {
     if(id < 1)
       return sendMessageMention(id);
 
-    if(!userMapper.exists(id))
+    val source = e.source;
+    val stringId = String.valueOf(id);
+
+    if(!userMapper.exists(source, stringId))
       return "Bui! I don't know this user...";
 
-    val lvl = xpManager.getLevel(id);
-    val xp = xpManager.getXP(id);
-    val xpNext = xpManager.getXpFromLevel(xpManager.getLevel(id)+1);
+    val lvl = xpManager.getLevel(source, stringId);
+    val xp = xpManager.getXP(source, stringId);
+    val xpNext = xpManager.getXpFromLevel(xpManager.getLevel(source, stringId)+1);
     val xpThisLvl = xpManager.getXpFromLevel(lvl);
     val progress = map(xp, xpThisLvl, xpNext, 0, 100);
     val barLength = 10;
@@ -300,20 +316,21 @@ public class General {
     if(user == null)
       return "Bui! I don't know this user...";
 
-    val embed = new BatEmbed();
+    val filledFinal = filled;
+    val emptyFinal = empty;
 
-    embed.title = e.author.id == id ? "Bui! Here your rank card!" : "Bui! Here is " + genitive(user.localName) +
-      " rank card!";
+    return new BatEmbed() {{
+      title = e.author.id == id ? "Bui! Here your rank card!" : "Bui! Here is " + genitive(user.localName) +
+        " rank card!";
 
-    embed.thumbnailUrl = user.localPfpUrl;
+      thumbnailUrl = user.localPfpUrl;
 
-    embed.description = "**Lvl:** " + lvl + " | **" + (xp-xpThisLvl) + "** / " + (xpNext-xpThisLvl) +
-      " **XPs** - (" + (xpNext-xp) + " XPs left)\n\n" + ":green_square:".repeat(filled) +
-      ":white_large_square:".repeat(empty) + " - (" + progress + "%)";
+      description = "**Lvl:** " + lvl + " | **" + (xp-xpThisLvl) + "** / " + (xpNext-xpThisLvl) +
+        " **XPs** - (" + (xpNext-xp) + " XPs left)\n\n" + ":green_square:".repeat(filledFinal) +
+        ":white_large_square:".repeat(emptyFinal) + " - (" + progress + "%)";
 
-    embed.footer = "Please do not spam!";
-
-    return embed;
+      footer = "Please do not spam!";
+    }};
   }
 
   @Command
@@ -398,26 +415,37 @@ public class General {
     if(member == null)
       return "Bui! Something went wrong...";
 
-    val user = userMapper.findById(id).orElseGet(( ) -> userMapper.insert(id));
-    val embed = new BatEmbed();
+    val source = e.source;
+    val idString = String.valueOf(id);
+    val user = userMapper.findById(source, idString).orElseGet(( ) -> userMapper.insert(source, idString));
 
-    if(id == e.author.id) {
-      embed.title = "Here are your stats:";
+    return new BatEmbed() {{
+      if(id == e.author.id) {
+        title = "Here are your stats:";
 
-      embed.description = "You said \"Bui\" " + user.getBui() + " time" + plural(user.getBui()) +
-        ".\nYou also said \"Buizel\" " + user.getBuizel() + " time" + plural(user.getBuizel()) + ".";
-    }
+        description = "You said \"Bui\" " + user.getBui() + " time" + plural(user.getBui()) +
+          ".\nYou also said \"Buizel\" " + user.getBuizel() + " time" + plural(user.getBuizel()) + ".";
+      }
 
-    else {
-      embed.title = "Here are " + genitive(member.localName) + " stats:";
+      else {
+        title = "Here are " + genitive(member.localName) + " stats:";
 
-      embed.description = "They said " + "\"Bui\" " + user.getBui() + " time" + plural(user.getBui()) +
-        ".\nThey also said \"Buizel\" " + user.getBuizel() + " time" + plural(user.getBuizel()) + ".";
-    }
+        description = "They said " + "\"Bui\" " + user.getBui() + " time" + plural(user.getBui()) +
+          ".\nThey also said \"Buizel\" " + user.getBuizel() + " time" + plural(user.getBuizel()) + ".";
+      }
 
-    embed.footer = "Bui! Great job!";
-    embed.thumbnailUrl = member.localPfpUrl;
+      footer = "Bui! Great job!";
+      thumbnailUrl = member.localPfpUrl;
+    }};
+  }
 
-    return embed;
+  @Command
+  public @NotNull String migration(final @Event @NotNull BatMRE e) {
+    if(e.author.id != Long.parseLong(shared.getValue(e.source, "owner")))
+      return "Bui! You don't have access to this command!";
+
+    e.channel.sendMessage("STARTED");
+    userMapper.findAllForMigration().forEach(userMapper::insertOld);
+    return "OK";
   }
 }

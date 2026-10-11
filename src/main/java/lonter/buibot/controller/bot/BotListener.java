@@ -17,7 +17,7 @@ public final class BotListener extends BatListenerAdapter {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final CustomSharedResources shared;
-  private final UserMapper userMapper;
+  private final UserMapper repo;
 
   private final BeforeInvoke before;
   private final AfterInvoke after;
@@ -70,16 +70,16 @@ public final class BotListener extends BatListenerAdapter {
       System.exit(-1);
     }
 
-    val id = author.id;
+    val id = String.valueOf(author.id);
     val hasUnverified = author.hasRole(unverified);
     val asMention = author.asMention;
 
     if(e.eventType.equals("join")) {
-      if(userMapper.exists(id))
-        userMapper.update(id, "here", true);
+      if(repo.exists(source, id))
+        repo.update(source, id, "here", true);
 
       else
-        userMapper.insert(id);
+        repo.insert(source, id);
 
       if(hasUnverified)
         return;
@@ -91,7 +91,7 @@ public final class BotListener extends BatListenerAdapter {
       return;
     }
 
-    userMapper.update(id, "here", false);
+    repo.update(source, id, "here", false);
 
     val localName = author.localName;
 

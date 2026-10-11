@@ -19,9 +19,10 @@ import java.util.regex.Pattern;
 
 @Component @AllArgsConstructor
 public final class AfterInvoke {
-  private final UserMapper userMapper;
+  private final UserMapper repo;
   private final CustomSharedResources sharedResources;
 
+  // FIXME: Move to DB?
   private static final HashMap<String, HashMap<String, String>> EMOJIS = new HashMap<>() {{
     put("discord", new HashMap<>() {{
       put("pet", "<a:Pet:1196258552680042566>");
@@ -64,9 +65,9 @@ public final class AfterInvoke {
 
     bui(e);
 
-    val id = e.author.id;
-    val found = userMapper.findById(id);
-    val user = found.orElseGet(( ) -> userMapper.insert(id));
+    val id = String.valueOf(e.author.id);
+    val source = e.source;
+    val user = repo.findById(source, id).orElseGet(( ) -> repo.insert(source, id));
 
     var bui = countOccurrences(msgRaw, "bui");
     var buizel = countOccurrences(msgRaw, "buizel");
@@ -80,7 +81,7 @@ public final class AfterInvoke {
     user.setBui(user.getBui()+bui);
     user.setBuizel(user.getBuizel()+buizel);
 
-    userMapper.updateBuis(user);
+    repo.updateBuis(user);
   }
 
   private void birthday(final @NotNull String input, final @NotNull BatMRE e) {

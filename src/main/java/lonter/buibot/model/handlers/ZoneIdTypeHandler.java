@@ -15,29 +15,27 @@ import java.sql.SQLException;
 import java.time.ZoneId;
 
 @MappedTypes(ZoneId.class)
-public class ZoneIdTypeHandler extends BaseTypeHandler<ZoneId> {
-  @Override
-  public void setNonNullParameter(final @NotNull PreparedStatement ps, final int i, final @NotNull ZoneId parameter,
-                                  final @Nullable JdbcType jdbcType) throws SQLException {
+public final class ZoneIdTypeHandler extends BaseTypeHandler<ZoneId> {
+  @Override public void setNonNullParameter(final @NotNull PreparedStatement ps, final int i,
+                                            final @NotNull ZoneId parameter,
+                                            final @Nullable JdbcType jdbcType) throws SQLException {
     ps.setString(i, parameter.getId());
   }
 
-  @Override
-  public @Nullable ZoneId getNullableResult(final @NotNull ResultSet rs, final @NotNull String columnName)
-      throws SQLException {
+  @Override public @Nullable ZoneId getNullableResult(final @NotNull ResultSet rs,
+                                                      final @NotNull String columnName) throws SQLException {
     val dbValue = rs.getString(columnName);
     return dbValue == null ? null : ZoneId.of(dbValue);
   }
 
-  @Override
-  public @Nullable ZoneId getNullableResult(final @NotNull ResultSet rs, final int columnIndex) throws SQLException {
+  @Override public @Nullable ZoneId getNullableResult(final @NotNull ResultSet rs,
+                                                      final int columnIndex) throws SQLException {
     val dbValue = rs.getString(columnIndex);
     return dbValue == null ? null : ZoneId.of(dbValue);
   }
 
-  @Override
-  public @Nullable ZoneId getNullableResult(final @NotNull CallableStatement cs, final int columnIndex)
-      throws SQLException {
+  @Override public @Nullable ZoneId getNullableResult(final @NotNull CallableStatement cs,
+                                                      final int columnIndex) throws SQLException {
     String dbValue = cs.getString(columnIndex);
     return dbValue == null ? null : ZoneId.of(dbValue);
   }
