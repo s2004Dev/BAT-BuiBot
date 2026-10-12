@@ -2,8 +2,10 @@ package lonter.buibot.controller.commands.utilities;
 
 import lombok.val;
 
+import lonter.bat.batobjs.BatException;
 import lonter.bat.batobjs.BatMRE;
 
+import lonter.bat.batobjs.BatServer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,10 +37,8 @@ public final class Util {
         return -2;
 
       try {
-        val user = e.bat.getUserByTag(input);
-
-        return user == null ? countOccurrences(input, "#") == 1 && input.split("#")[1].matches("-?\\d+") ? 0 : -1 :
-          user.id;
+        return countOccurrences(input, "#") == 1 && input.split("#")[1].matches("-?\\d+") ? 0 :
+          e.bat.getUserByTag(input).orElseThrow().id;
       }
 
       catch(final @NotNull Exception ignored) {
@@ -127,5 +127,9 @@ public final class Util {
     catch(final @NotNull Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static @NotNull BatServer getServer(final @NotNull BatMRE e) {
+    return e.server.orElseThrow(( ) -> new BatException("Bui! This command works only in a server!"));
   }
 }

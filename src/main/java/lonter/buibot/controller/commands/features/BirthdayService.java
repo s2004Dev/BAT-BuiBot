@@ -91,14 +91,11 @@ public final class BirthdayService {
       if(!user.birthday.equals(MonthDay.now(user.timezone)) || ZonedDateTime.now(user.timezone).getHour() != 0)
         continue;
 
-      val news = shared.getServer(source).getChannelById(Long.parseLong(shared.getValue(source, "news")));
-
-      if(news == null) {
+      shared.getServer(source).getChannelById(Long.parseLong(shared.getValue(source, "news"))).orElseThrow(( ) -> {
         log.warn("checkBirthdays() - {}: news channel is null.", source);
-        return;
-      }
-
-      news.sendMessage("Happy birthday <@" + user.idSource + ">!");
+        System.exit(-1);
+        return null;
+      }).sendMessage("Happy birthday <@" + user.idSource + ">!");
     }
   }
 }

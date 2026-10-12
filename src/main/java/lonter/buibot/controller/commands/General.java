@@ -49,9 +49,7 @@ public final class General {
   @Subcommand(name = "set", description = "Bui will ask you to set your birthday information.",
     usage = "<dd/MM timezone>")
   public @NotNull String birthday(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
-    if(e.server == null)
-      return "Bui! This command works only in a server!";
-
+    val server = getServer(e);
     val source = e.source;
 
     if(args.length > 0 && args[0].equals("set")) {
@@ -107,12 +105,10 @@ public final class General {
     if(found.isEmpty())
       return idk;
 
-    val member = e.server.getMemberById(id);
-
-    if(member == null) {
+    val member = server.getMemberById(id).orElseThrow(( ) -> {
       log.warn("birthday(): No member found with id {}.", id);
-      return "Bui! Something went wrong...";
-    }
+      return new BatException("Bui! Something went wrong...");
+    });
 
     val user = found.get();
     val birthday = user.birthday;
@@ -138,8 +134,8 @@ public final class General {
   @Subcommand(name = "buizel", description = "Bui will send the list of the people who said buizel the most.")
   @Subcommand(name = "levels", description = "Bui will send the list of the people who talked the most.")
   public @NotNull Object leaderboard(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
-    if(e.server == null)
-      return "Bui! This command works only in a server!";
+    // noinspection ResultOfMethodCallIgnored
+    getServer(e);
 
     if(args.length < 1)
       return "Bui... you have to specify what do you want me to show the list of!";
@@ -179,12 +175,12 @@ public final class General {
 
       val member = shared.getServer(user.source).getMemberById(idLong);
 
-      if(member == null) {
+      if(member.isEmpty()) {
         log.warn("leaderboard(): member {} was found null.", idSource);
         return;
       }
 
-      line.append("**").append(i.incrementAndGet()).append(") ").append(member.localName).append(":** ")
+      line.append("**").append(i.incrementAndGet()).append(") ").append(member.get().localName).append(":** ")
         .append(num).append("\n");
 
       text.append(line);
@@ -226,9 +222,7 @@ public final class General {
   @Help(description = "Bui will send someone's profile picture.", usage = "[id] | [args] [id]")
   @Subcommand(name = "local", description = "Bui will send someone's local profile picture", usage = "[id]")
   public @NotNull Object profilePicture(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
-    if(e.server == null)
-      return "Bui! This command works only in a server!";
-
+    val server = getServer(e);
     val embed = new BatEmbed();
     val id = getUserId(args.length > 0 && args[0].equals("local") ? removeFirst(args) : args, e);
 
@@ -254,10 +248,7 @@ public final class General {
       return embed;
     }
 
-    member = e.server.getMemberById(id);
-
-    if(member == null)
-      return "Bui... an error has occurred...";
+    member = server.getMemberById(id).orElseThrow(( ) -> new BatException("Bui... an error has occurred..."));
 
     if(args.length > 0 && args[0].equals("local")) {
       if(!member.hasLocalPfp())
@@ -277,8 +268,8 @@ public final class General {
 
   @Command @Help(description = "Bui will send someone's rank card in the server (by messages).", usage = "[id]")
   public @NotNull Object rank(final @Args String @NotNull[] args, final @Event @NotNull BatMRE e) {
-    if(e.server == null)
-      return "Bui! This command works only in a server!";
+    // noinspection ResultOfMethodCallIgnored
+    getServer(e);
 
     val id = getUserId(args, e);
 
@@ -314,11 +305,7 @@ public final class General {
       empty = 0;
     }
 
-    val user = e.bat.getUserById(id);
-
-    if(user == null)
-      return "Bui! I don't know this user...";
-
+    val user = e.bat.getUserById(id).orElseThrow(( ) -> new BatException("Bui! I don't know this user..."));
     val filledFinal = filled;
     val emptyFinal = empty;
 
@@ -413,11 +400,7 @@ public final class General {
     if(self(id, e))
       return "Bui! I am unrankable! <:Chad:1045753361737199656>";
 
-    val member = e.bat.getUserById(id);
-
-    if(member == null)
-      return "Bui! Something went wrong...";
-
+    val member = e.bat.getUserById(id).orElseThrow(( ) -> new BatException("Bui! Something went wrong..."));
     val source = e.source;
     val idString = String.valueOf(id);
     val user = userMapper.findById(source, idString).orElseGet(( ) -> userMapper.insert(source, idString));

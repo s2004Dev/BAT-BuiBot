@@ -56,19 +56,18 @@ public final class BotListener extends BatListenerAdapter {
     val source = e.source;
     val type = e.eventType;
     val server = shared.getServer(source);
-    val unverified = server.getRoleById(Long.parseLong(shared.getValue(source, "unverified")));
 
-    if(unverified == null) {
+    val unverified = server.getRoleById(Long.parseLong(shared.getValue(source, "unverified"))).orElseThrow(( ) -> {
       log.warn("onMemberJoinLeave() - {}, {}: unverified role is null.", source, type);
       System.exit(-1);
-    }
+      return null;
+    });
 
-    val staff = server.getChannelById(Long.parseLong(shared.getValue(e.source, "staff")));
-
-    if(staff == null) {
+    val staff = server.getChannelById(Long.parseLong(shared.getValue(e.source, "staff"))).orElseThrow(( ) -> {
       log.warn("onMemberJoinLeave() - {}, {}: Staff channel is null.", source, type);
       System.exit(-1);
-    }
+      return null;
+    });
 
     val id = String.valueOf(author.id);
     val hasUnverified = author.hasRole(unverified);
@@ -100,12 +99,11 @@ public final class BotListener extends BatListenerAdapter {
       return;
     }
 
-    val general = server.getChannelById(Long.parseLong(shared.getValue(source, "mainChannel")));
-
-    if(general == null) {
+    val general = server.getChannelById(Long.parseLong(shared.getValue(source, "mainChannel"))).orElseThrow(( ) -> {
       log.warn("onMemberJoinLeave() - {}, {}: general is null.", source, type);
-      return;
-    }
+      System.exit(-1);
+      return null;
+    });
 
     general.sendMessage(asMention + "(" + localName + ") left the valley...");
   }
@@ -120,14 +118,12 @@ public final class BotListener extends BatListenerAdapter {
     if(e.roles.stream().noneMatch(i -> i.id == kohai))
       return;
 
-    val general = shared.getServer(source).getChannelById(Long.parseLong(shared.getValue(source, "mainChannel")));
-
-    if(general == null) {
-      log.warn("onGuildMemberRoleAdd() - {}: Main channel is null.", source);
-      return;
-    }
-
-    general.sendMessage("Bui! Welcome " + e.author.asMention + "! Remember to keep an eye on <#" +
+    shared.getServer(source).getChannelById(Long.parseLong(shared.getValue(source, "mainChannel")))
+        .orElseThrow(( ) -> {
+      log.warn("onGuildMemberRoleAdd() - {}: general is null.", source);
+      System.exit(-1);
+      return null;
+    }).sendMessage("Bui! Welcome " + e.author.asMention + "! Remember to keep an eye on <#" +
       shared.getValue(source, "news") + "> and, if you want, you can introduce yourself at <#" +
       shared.getValue(source, "introduction") + ">, have a nice stay! " + shared.getValue(source, "emoji"));
   }
@@ -137,13 +133,14 @@ public final class BotListener extends BatListenerAdapter {
       return;
 
     val source = e.source;
-    val role = shared.getServer(source).getRoleById(rr.roleId);
+    val found = shared.getServer(source).getRoleById(rr.roleId);
 
-    if(role == null) {
+    if(found.isEmpty()) {
       log.warn("reactionLogic() - {}: role {} is null.", e.eventType, rr.roleId);
       return;
     }
 
+    val role = found.get();
     val author = e.author;
     val roles = author.hasRole(role);
     val add = e.eventType.equals("add");

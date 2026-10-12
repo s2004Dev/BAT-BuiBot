@@ -31,15 +31,11 @@ public final class BeforeInvoke {
     if(lvlThen == lvlNow)
       return;
 
-    val outputChannel = shared.getServer(source)
-      .getChannelById(Long.parseLong(shared.getValue(source, "outputChannel")));
-
-    if(outputChannel == null) {
+    shared.getServer(source).getChannelById(Long.parseLong(shared.getValue(source, "outputChannel")))
+        .orElseThrow(( ) -> {
       log.warn("logic(): output channel is null.");
-      return;
-    }
-
-    outputChannel.sendMessage("Congratulations **" + author.localName +
-      "**! You just advanced to level **" + lvlNow + "**!");
+      System.exit(-1);
+      return null;
+    }).sendMessage("Congratulations **" + author.localName + "**! You just advanced to level **" + lvlNow + "**!");
   }
 }
