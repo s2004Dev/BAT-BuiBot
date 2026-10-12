@@ -151,7 +151,7 @@ public final class General {
 
     val embed = new BatEmbed();
 
-    embed.title = "Bui! Here are the people who " + (type.equals("levels") ? "talk" : "said" + type) +
+    embed.title = "Bui! Here are the people who " + (type.equals("levels") ? "talk" : "said" + " " + type) +
       " the most!";
 
     val text = new StringBuilder();
