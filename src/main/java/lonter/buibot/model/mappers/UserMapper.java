@@ -53,7 +53,7 @@ public interface UserMapper {
           "WHERE id = (SELECT id FROM user_mappings WHERE id_source = #{ idSource } AND source = #{ source })")
   void updateBirth(final @NotNull User user);
 
-  @Select("SELECT u.id, u.${ category }, m.id_source AS idSource FROM users u " +
+  @Select("SELECT u.id, u.source, u.${ category }, m.id_source AS idSource FROM users u " +
           "JOIN user_mappings m ON u.id = m.id AND u.source = m.source " +
           "WHERE u.${ category } IS NOT NULL AND u.here = TRUE " +
           "ORDER BY u.${ category } DESC LIMIT 10")
