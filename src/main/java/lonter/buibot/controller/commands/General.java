@@ -488,9 +488,14 @@ public final class General {
     val deleted = userMapper.findById(source, idString).orElseThrow(( ) ->
       new BatException("Bui! An error has occurred!"));
 
-    merged.merge(deleted);
-
     val oldId = deleted.id;
+
+    if(merged.id == oldId) {
+      links.remove(first);
+      return "Bui! These accounts are already linked together!";
+    }
+
+    merged.merge(deleted);
 
     userMapper.updateForMerge(merged, oldId, source);
     userMapper.delete(oldId);
