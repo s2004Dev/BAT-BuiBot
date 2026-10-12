@@ -492,8 +492,8 @@ public final class General {
 
     val oldId = deleted.id;
 
-    userMapper.delete(oldId);
     userMapper.updateForMerge(merged, oldId, source);
+    userMapper.delete(oldId);
 
     links.remove(first);
 

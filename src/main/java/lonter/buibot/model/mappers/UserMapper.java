@@ -44,10 +44,10 @@ public interface UserMapper {
   void update(final @NotNull String source, final @NotNull String id, final @NotNull String category,
               final Object value);
 
-  @Update("WITH updated_mapping AS (UPDATE user_mappings SET id = #{ id } " +
+  @Update("WITH updated_mapping AS (UPDATE user_mappings SET id = #{ user.id } " +
           "WHERE id = #{ oldId } AND source = #{ oldSource }) UPDATE users " +
-          "SET bui = #{ bui }, buizel = #{ buizel }, xps = #{ xps }, joined = #{ joined }, " +
-          "birthday = #{ birthday }, timezone = #{ timezone } WHERE id = #{ id }")
+          "SET bui = #{ user.bui }, buizel = #{ user.buizel }, xps = #{ user.xps }, joined = #{ user.joined }, " +
+          "birthday = #{ user.birthday }, timezone = #{ user.timezone } WHERE id = #{ user.id }")
   void updateForMerge(final @NotNull User user, final long oldId, final @NotNull String oldSource);
 
   @Update("UPDATE users SET bui = #{ bui }, buizel = #{ buizel } WHERE id = #{ id }")
