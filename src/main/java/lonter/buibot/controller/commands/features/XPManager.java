@@ -1,6 +1,6 @@
-package lonter.buibot.controller.commands.functions;
+package lonter.buibot.controller.commands.features;
 
-import static lonter.buibot.controller.commands.Util.rand;
+import static lonter.buibot.controller.commands.utilities.Util.rand;
 
 import lombok.AllArgsConstructor;
 import lombok.val;

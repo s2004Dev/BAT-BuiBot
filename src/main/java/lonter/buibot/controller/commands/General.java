@@ -1,6 +1,7 @@
 package lonter.buibot.controller.commands;
 
-import static lonter.buibot.controller.commands.Util.*;
+import static lonter.buibot.controller.commands.utilities.Try.tryn;
+import static lonter.buibot.controller.commands.utilities.Util.*;
 
 import lombok.AllArgsConstructor;
 import lombok.val;
@@ -12,11 +13,11 @@ import lonter.bat.annotations.help.Subcommand;
 import lonter.bat.annotations.parameters.ats.Args;
 import lonter.bat.annotations.parameters.ats.Event;
 import lonter.bat.batobjs.BatEmbed;
+import lonter.bat.batobjs.BatException;
 import lonter.bat.batobjs.BatMRE;
 import lonter.buibot.controller.bot.CustomSharedResources;
-import lonter.buibot.controller.commands.functions.BirthdayService;
-import lonter.buibot.controller.commands.functions.InvalidCityException;
-import lonter.buibot.controller.commands.functions.XPManager;
+import lonter.buibot.controller.commands.features.*;
+import lonter.buibot.controller.commands.utilities.LinkMap;
 import lonter.buibot.model.entities.ReactionRole;
 import lonter.buibot.model.mappers.ReactionRoleMapper;
 import lonter.buibot.model.mappers.UserMapper;
@@ -35,6 +36,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @CommandClass @AllArgsConstructor
 public final class General {
   private final Logger log = LoggerFactory.getLogger(getClass());
+
+  private final LinkMap links = new LinkMap();
 
   private final UserMapper userMapper;
   private final XPManager xpManager;
@@ -439,7 +442,7 @@ public final class General {
     }};
   }
 
-  @Command
+  @Command // FIXME: Remove after migration.
   public @NotNull String migration(final @Event @NotNull BatMRE e) {
     if(e.author.id != Long.parseLong(shared.getValue(e.source, "owner")))
       return "Bui! You don't have access to this command!";
@@ -447,5 +450,53 @@ public final class General {
     e.channel.sendMessage("STARTED");
     userMapper.findAllForMigration().forEach(userMapper::insertOld);
     return "OK";
+  }
+
+  @Command @Help(description = "Bui will link your existing account with another one on the other platform.",
+    usage = "[id] | [code]") @Subcommand(name = "default", description = "Bui will set the current platform as " +
+    "your preferred one.")
+  public @NotNull String link(final @Event @NotNull BatMRE e, final @Args String @NotNull[] args) {
+    if(args.length < 1)
+      return "Bui! You need to specify at least one argument!";
+
+    val first = args[0];
+    val id = e.author.id;
+    val idString = String.valueOf(id);
+    val source = e.source;
+
+    if(first.equals("default")) {
+      userMapper.update(source, idString, "source", source);
+      return "Bui! Set this platform as your default one!";
+    }
+
+    if(first.length() != 6)
+      return "Bui! Type `" + shared.prefix + "link " + links.put(new LinkMap.Link(id, tryn(( ) ->
+        Long.parseLong(first)).orElseThrow(( ) -> new BatException("Bui! An error has occurred!")), source)) +
+        "` on the other side in the next three minutes to link the account!";
+
+    val link = links.get(first).orElseThrow(( ) -> new BatException("Bui! The code is either wrong or expired!"));
+    val sourceLink = link.source();
+
+    if(link.idTo() != id || source.equals(sourceLink))
+      return "Bui! You cannot perform this action!";
+
+    val idFrom = String.valueOf(link.idFrom());
+
+    val merged = userMapper.findById(sourceLink, idFrom).orElseThrow(( ) ->
+      new BatException("Bui! An error has occurred!"));
+
+    val deleted = userMapper.findById(source, idString).orElseThrow(( ) ->
+      new BatException("Bui! An error has occurred!"));
+
+    merged.merge(deleted);
+
+    val oldId = deleted.id;
+
+    userMapper.delete(oldId);
+    userMapper.updateForMerge(merged, oldId, source);
+
+    links.remove(first);
+
+    return "Bui! Link successful!";
   }
 }

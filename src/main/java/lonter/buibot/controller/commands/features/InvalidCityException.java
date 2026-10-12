@@ -1,4 +1,4 @@
-package lonter.buibot.controller.commands.functions;
+package lonter.buibot.controller.commands.features;
 
 import org.jetbrains.annotations.NotNull;
 

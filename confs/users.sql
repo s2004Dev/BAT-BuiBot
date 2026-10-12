@@ -6,7 +6,7 @@ CREATE TABLE users (
     bui                     BIGINT                         ,
     buizel                  BIGINT                         ,
     xps                     INT                            ,
-    joined                  DATE                NOT NULL   ,
+    joined                  TIMESTAMP           NOT NULL   ,
     birthday                VARCHAR(7)                     ,
     timezone                VARCHAR(255)                   ,
     here                    BOOLEAN             NOT NULL

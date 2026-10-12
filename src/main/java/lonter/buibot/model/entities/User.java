@@ -5,9 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.time.LocalDateTime;
 import java.time.MonthDay;
 import java.time.ZoneId;
-import java.util.Date;
 
 @Data @AllArgsConstructor
 @NoArgsConstructor @Builder
@@ -18,8 +20,23 @@ public class User {
   public int bui;
   public int buizel;
   public int xps;
-  public Date joined;
+  public LocalDateTime joined;
   public MonthDay birthday;
   public ZoneId timezone;
   public boolean here;
+
+  public void merge(final @NotNull User from) {
+    bui += from.bui;
+    buizel += from.buizel;
+    xps += from.xps;
+
+    if(joined.isAfter(from.joined))
+      joined = from.joined;
+
+    if(birthday == null)
+      birthday = from.birthday;
+
+    if(timezone == null)
+      timezone = from.timezone;
+  }
 }

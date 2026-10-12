@@ -1,6 +1,6 @@
 package lonter.buibot.controller.bot;
 
-import static lonter.buibot.controller.commands.Util.*;
+import static lonter.buibot.controller.commands.utilities.Util.*;
 
 import lombok.AllArgsConstructor;
 import lombok.val;

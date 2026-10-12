@@ -1,4 +1,4 @@
-package lonter.buibot.controller.commands.functions;
+package lonter.buibot.controller.commands.features;
 
 import com.fasterxml.jackson.databind.JsonNode;
 

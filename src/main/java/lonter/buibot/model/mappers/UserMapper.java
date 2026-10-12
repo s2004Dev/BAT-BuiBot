@@ -2,6 +2,7 @@ package lonter.buibot.model.mappers;
 
 import lonter.buibot.model.entities.User;
 
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -12,8 +13,8 @@ import java.util.Optional;
 
 @Mapper
 public interface UserMapper {
-  @Select("SELECT u.id, u.bui, u.buizel, u.source FROM users u JOIN user_mappings m ON u.id = m.id " +
-          "WHERE m.id_source = #{ id } AND m.source = #{ source }")
+  @Select("SELECT u.id, u.bui, u.buizel, u.xps, u.joined, u.birthday, u.timezone, u.source FROM users u " +
+          "JOIN user_mappings m ON u.id = m.id WHERE m.id_source = #{ id } AND m.source = #{ source }")
   @NotNull Optional<User> findById(final @NotNull String source, final @NotNull String id);
 
   @Select("SELECT u.xps FROM users u JOIN user_mappings m ON u.id = m.id " +
@@ -43,6 +44,12 @@ public interface UserMapper {
   void update(final @NotNull String source, final @NotNull String id, final @NotNull String category,
               final Object value);
 
+  @Update("WITH updated_mapping AS (UPDATE user_mappings SET id = #{ id } " +
+          "WHERE id = #{ oldId } AND source = #{ oldSource }) UPDATE users " +
+          "SET bui = #{ bui }, buizel = #{ buizel }, xps = #{ xps }, joined = #{ joined }, " +
+          "birthday = #{ birthday }, timezone = #{ timezone } WHERE id = #{ id }")
+  void updateForMerge(final @NotNull User user, final long oldId, final @NotNull String oldSource);
+
   @Update("UPDATE users SET bui = #{ bui }, buizel = #{ buizel } WHERE id = #{ id }")
   void updateBuis(final @NotNull User user);
 
@@ -70,4 +77,7 @@ public interface UserMapper {
   @Select("SELECT res.rank FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY xps DESC) AS rank FROM users) res " +
           "JOIN user_mappings m ON res.id = m.id WHERE m.id_source = #{ id } AND m.source = #{ source }")
   @NotNull Optional<Integer> getIndex(final @NotNull String source, final @NotNull String id);
+
+  @Delete("DELETE FROM users WHERE id = #{ id }")
+  void delete(final long id);
 }

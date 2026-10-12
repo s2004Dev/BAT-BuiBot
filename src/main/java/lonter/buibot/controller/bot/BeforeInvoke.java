@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.val;
 
 import lonter.bat.batobjs.BatMRE;
-import lonter.buibot.controller.commands.functions.XPManager;
+import lonter.buibot.controller.commands.features.XPManager;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
