@@ -35,10 +35,6 @@ public interface UserMapper {
           "SELECT id, #{ id }, #{ source } FROM new) SELECT * FROM new")
   @NotNull User insert(final @NotNull String source, final @NotNull String id);
 
-  @Select("INSERT INTO users(id, bui, buizel, xps, joined, here, source) " +
-          "VALUES(nextval('user_ids'), #{ bui }, #{ buizel }, #{ xps }, #{ joined }, #{ here }, #{ source })")
-  void insertOld(final @NotNull User user);
-
   @Update("UPDATE users SET ${ category } = #{ value } " +
           "WHERE id = (SELECT id FROM user_mappings WHERE id_source = #{ id } AND source = #{ source })")
   void update(final @NotNull String source, final @NotNull String id, final @NotNull String category,
@@ -56,9 +52,6 @@ public interface UserMapper {
   @Update("UPDATE users SET birthday = #{ birthday }, timezone = #{ timezone } " +
           "WHERE id = (SELECT id FROM user_mappings WHERE id_source = #{ idSource } AND source = #{ source })")
   void updateBirth(final @NotNull User user);
-
-  @Select("SELECT * FROM users")
-  @NotNull ArrayList<User> findAllForMigration();
 
   @Select("SELECT u.id, u.${ category }, m.id_source AS idSource FROM users u " +
           "JOIN user_mappings m ON u.id = m.id AND u.source = m.source " +

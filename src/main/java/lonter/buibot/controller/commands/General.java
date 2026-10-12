@@ -442,16 +442,6 @@ public final class General {
     }};
   }
 
-  @Command // FIXME: Remove after migration.
-  public @NotNull String migration(final @Event @NotNull BatMRE e) {
-    if(e.author.id != Long.parseLong(shared.getValue(e.source, "owner")))
-      return "Bui! You don't have access to this command!";
-
-    e.channel.sendMessage("STARTED");
-    userMapper.findAllForMigration().forEach(userMapper::insertOld);
-    return "OK";
-  }
-
   @Command @Help(description = "Bui will link your existing account with another one on the other platform.",
     usage = "[id] | [code]") @Subcommand(name = "default", description = "Bui will set the current platform as " +
     "your preferred one.")

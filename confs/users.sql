@@ -12,4 +12,6 @@ CREATE TABLE users (
     here                    BOOLEAN             NOT NULL
 );
 
+DROP SEQUENCE IF EXISTS user_ids;
+
 CREATE SEQUENCE user_ids START WITH 1 INCREMENT BY 1;
