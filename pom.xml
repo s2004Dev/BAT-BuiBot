@@ -14,8 +14,6 @@
   <groupId> it.lonter </groupId>
   <artifactId> buibot </artifactId>
   <version> 0.2 </version>
-  <name> BuiBot </name>
-  <description> BuiBot </description>
 
   <properties>
     <java.version> 25 </java.version>
@@ -32,7 +30,7 @@
     <dependency>
       <groupId> it.lonter </groupId>
       <artifactId> bat </artifactId>
-      <version> 0.1 </version>
+      <version> 0.1.0 </version>
     </dependency>
 
     <dependency>
@@ -44,7 +42,7 @@
     <dependency>
       <groupId> it.lonter </groupId>
       <artifactId> jfa </artifactId>
-      <version> 0.1 </version>
+      <version> 0.1.0 </version>
     </dependency>
 
     <dependency>
