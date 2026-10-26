@@ -1,0 +1,135 @@
+package it.lonter.buibot.controller.commands.utilities;
+
+import lombok.val;
+
+import it.lonter.bat.batobjs.BatException;
+import it.lonter.bat.batobjs.BatMRE;
+
+import it.lonter.bat.batobjs.BatServer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.concurrent.ThreadLocalRandom;
+
+public final class Util {
+  public static @NotNull String sendMessageMention(final long id) {
+    return id == 0L ? "Bui! Wrong tag!" : id == -1L ? "Bui! I don't get the input!" :
+      "Bui! Something went wrong...";
+  }
+
+  public static long getUserId(final String @NotNull[] args, final @NotNull BatMRE e) {
+    if(args.length == 0)
+      return e.author.id;
+
+    val input = args[0];
+
+    try {
+      return Long.parseLong(input.replace("<", "").replace("@", "").replace(">", ""));
+    }
+
+    catch(final @NotNull Exception ex) {
+      if(!(ex instanceof NumberFormatException))
+        return -2;
+
+      try {
+        return countOccurrences(input, "#") == 1 && input.split("#")[1].matches("-?\\d+") ? 0 :
+          e.bat.getUserByTag(input).orElseThrow().id;
+      }
+
+      catch(final @NotNull Exception ignored) {
+        return -1;
+      }
+    }
+  }
+
+  public static boolean self(final long id, final @NotNull BatMRE e) {
+    return id == e.self.id;
+  }
+
+  public static int countOccurrences(final @NotNull String haystack, final @NotNull String needle) {
+    var count = 0;
+    var index = 0;
+
+    while((index = haystack.indexOf(needle, index)) != -1) {
+      count++;
+      index += needle.length();
+    }
+
+    return count;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T extends Number> @NotNull T rand(final @NotNull T min, final @NotNull T max) {
+    val current = ThreadLocalRandom.current();
+
+    return switch(min) {
+      case Double a when max instanceof Double b -> (T) Double.valueOf(current.nextDouble(a, b));
+      case Float a when max instanceof Float b -> (T) Float.valueOf(current.nextFloat(a, b));
+      case Integer a when max instanceof Integer b -> (T) Integer.valueOf(current.nextInt(a, b+1));
+      case Long a when max instanceof Long b -> (T) Long.valueOf(current.nextLong(a, b+1));
+
+      default -> throw new IllegalArgumentException("Unsupported type: " + min.getClass());
+    };
+  }
+
+  public static <T extends Number> @NotNull String plural(final @Nullable T input) {
+    return switch(input) {
+      case Byte i -> i == 1 ? "" : "s";
+      case Short i -> i == 1 ? "" : "s";
+      case Integer i -> i == 1 ? "" : "s";
+      case Long i -> i == 1 ? "" : "s";
+      case Float i -> i == 1. ? "" : "s";
+      case Double i -> i == 1. ? "" : "s";
+      case null, default -> "s";
+    };
+  }
+
+  public static int map(final int x, final int inMin, final int inMax, final int outMin,
+                        final int outMax) {
+    return (x-inMin)*(outMax-outMin)/(inMax-inMin)+outMin;
+  }
+
+  public static String @NotNull[] removeFirst(final String @NotNull[] input) {
+    return removeTo(input, 1);
+  }
+
+  public static String @NotNull[] removeTo(final String @NotNull[] input, final int index) {
+    val newArray = new String[input.length-index];
+    System.arraycopy(input, index, newArray, 0, newArray.length);
+    return newArray;
+  }
+
+  public static @NotNull String genitive(final @NotNull String input) {
+    return input + (input.endsWith("s") ? "'" : "'s");
+  }
+
+  public static @NotNull String date(@NotNull String day, @NotNull String month, final @NotNull ZoneId timezone) {
+    if(day.length() == 1)
+      day = "0" + day;
+
+    if(month.length() == 1)
+      month = "0" + month;
+
+    val dm = day + "/" + month + "/";
+    val year = (Year.now().getValue());
+    val date = dm + year;
+
+    try {
+      return new Date(LocalDate.parse(date, DateTimeFormatter.ofPattern("dd/MM/yyyy")).atStartOfDay(timezone)
+        .toInstant().toEpochMilli()).after(new Date()) ? date : dm + (year+1);
+    }
+
+    catch(final @NotNull Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static @NotNull BatServer getServer(final @NotNull BatMRE e) {
+    return e.server.orElseThrow(( ) -> new BatException("Bui! This command works only in a server!"));
+  }
+}

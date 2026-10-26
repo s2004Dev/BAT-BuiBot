@@ -1,0 +1,25 @@
+package it.lonter.buibot;
+
+import lombok.val;
+
+import org.jetbrains.annotations.NotNull;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
+
+@SpringBootApplication
+
+@ComponentScan(basePackages = {
+  "it.lonter.buibot",
+  "it.lonter.bat"
+})
+
+public class BuiBot {
+  static void main(final String @NotNull[] args) {
+    val app = new SpringApplication(BuiBot.class);
+
+    app.setWebApplicationType(WebApplicationType.NONE);
+    app.run(args);
+  }
+}

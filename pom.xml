@@ -11,7 +11,7 @@
     <relativePath/>
   </parent>
 
-  <groupId> lonter </groupId>
+  <groupId> it.lonter </groupId>
   <artifactId> buibot </artifactId>
   <version> 0.2 </version>
   <name> BuiBot </name>
@@ -19,7 +19,7 @@
 
   <properties>
     <java.version> 25 </java.version>
-    <start-class> lonter.buibot.BuiBot </start-class>
+    <start-class> it.lonter.buibot.BuiBot </start-class>
     <mybatis.version> 4.1.0 </mybatis.version>
   </properties>
 
@@ -30,7 +30,7 @@
     </dependency>
 
     <dependency>
-      <groupId> lonter </groupId>
+      <groupId> it.lonter </groupId>
       <artifactId> bat </artifactId>
       <version> 0.1 </version>
     </dependency>
@@ -42,7 +42,7 @@
     </dependency>
 
     <dependency>
-      <groupId> lonter </groupId>
+      <groupId> it.lonter </groupId>
       <artifactId> jfa </artifactId>
       <version> 0.1 </version>
     </dependency>
