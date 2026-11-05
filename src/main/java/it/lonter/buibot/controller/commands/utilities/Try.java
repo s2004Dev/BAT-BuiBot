@@ -13,12 +13,12 @@ import java.util.function.Consumer;
 
 @NoArgsConstructor
 public abstract class Try<V> {
-  public static <V> @NotNull Optional<V> tryf(final @NotNull Callable<V> action,
-                                              final @NotNull Consumer<Exception> error) {
+  public static <V> @NotNull Optional<V> get(final @NotNull Callable<V> action,
+                                             final @NotNull Consumer<Exception> error) {
     return call(action).ifFailure(error).toOptional();
   }
 
-  public static <V> @NotNull Optional<V> tryn(final @NotNull Callable<V> action) {
+  public static <V> @NotNull Optional<V> get(final @NotNull Callable<V> action) {
     return call(action).toOptional();
   }
 

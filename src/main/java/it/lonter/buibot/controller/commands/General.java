@@ -1,6 +1,6 @@
 package it.lonter.buibot.controller.commands;
 
-import static it.lonter.buibot.controller.commands.utilities.Try.tryn;
+import static it.lonter.buibot.controller.commands.utilities.Try.get;
 import static it.lonter.buibot.controller.commands.utilities.Util.*;
 
 import lombok.AllArgsConstructor;
@@ -443,7 +443,7 @@ public final class General {
     }
 
     if(first.length() != 6)
-      return "Bui! Type `" + shared.prefix + "link " + links.put(new LinkMap.Link(id, tryn(( ) ->
+      return "Bui! Type `" + shared.prefix + "link " + links.put(new LinkMap.Link(id, get(( ) ->
         Long.parseLong(first)).orElseThrow(( ) -> new BatException("Bui! An error has occurred!")), source)) +
         "` on the other side in the next three minutes to link the account!";
 
